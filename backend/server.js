@@ -32,10 +32,22 @@ app.use('/api/dashboard',   require('./routes/dashboard'));
 // ── Health check ──────────────────────────────────────────────
 app.get('/health', async (req, res) => {
   try {
-    await pool.query('SELECT 1');
-    res.json({ status: 'ok', db: 'connected', time: new Date().toISOString() });
-  } catch {
-    res.status(503).json({ status: 'error', db: 'disconnected' });
+    const result = await pool.query('SELECT NOW() AS now');
+    res.json({
+      status: 'ok',
+      db: 'connected',
+      db_time: result.rows[0].now,
+      app_time: new Date().toISOString(),
+      node: process.version,
+    });
+  } catch (err) {
+    // Return the real error so you can diagnose it
+    res.status(503).json({
+      status: 'error',
+      db: 'disconnected',
+      error: err.message,
+      hint: 'Check DATABASE_URL in Railway Variables. Must include ?sslmode=require or pool uses ssl:{rejectUnauthorized:false}',
+    });
   }
 });
 
