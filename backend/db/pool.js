@@ -1,56 +1,60 @@
 const { Pool } = require('pg');
+const dns = require('dns');
 
-// ── Supabase requires the connection string on port 5432
-// ── with SSL enabled but certificate not verified.
-// ── Railway injects DATABASE_URL automatically if you add
-// ── a Postgres plugin — but for Supabase you set it manually.
+// ── Force IPv4 DNS resolution ─────────────────────────────────
+// Railway does not support IPv6. Supabase's direct connection URL
+// (db.xxxx.supabase.co) now resolves to IPv6 → ENETUNREACH error.
+// Setting dns.setDefaultResultOrder('ipv4first') forces Node to
+// always prefer IPv4 addresses when resolving hostnames.
+dns.setDefaultResultOrder('ipv4first');
 
-// Parse the DATABASE_URL and force correct SSL settings.
-// This handles all three Supabase connection string formats:
-//   postgresql://postgres:[PASS]@db.[REF].supabase.co:5432/postgres
-//   postgres://postgres:[PASS]@db.[REF].supabase.co:5432/postgres
-//   postgresql://postgres.[REF]:[PASS]@aws-0-[REGION].pooler.supabase.com:6543/postgres  ← pooler
+const url = process.env.DATABASE_URL;
 
-function buildConfig() {
-  const url = process.env.DATABASE_URL;
-
-  if (!url) {
-    console.error('❌  DATABASE_URL is not set! Add it to your Railway environment variables.');
-    process.exit(1);
-  }
-
-  // Always force SSL for Supabase — rejectUnauthorized:false
-  // because Supabase uses a self-signed cert chain that Node rejects by default.
-  return {
-    connectionString: url,
-    ssl: { rejectUnauthorized: false },
-    max: 10,
-    min: 1,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,  // raised from 5s → 10s for Railway cold starts
-    allowExitOnIdle: false,
-  };
+if (!url) {
+  console.error('❌  DATABASE_URL is not set!');
+  console.error('    Go to Railway → your service → Variables → add DATABASE_URL');
+  console.error('    Use the Supabase POOLER connection string (Settings → Database → Connection Pooling)');
+  process.exit(1);
 }
 
-const pool = new Pool(buildConfig());
+// ── Detect which Supabase URL format is being used ────────────
+const isPooler = url.includes('pooler.supabase.com');
+console.log(`[DB] Using ${isPooler ? 'Supabase pooler (IPv4 ✅)' : 'direct connection'}`);
 
-pool.on('error', (err) => {
-  console.error('❌  Unexpected DB pool error:', err.message);
+const pool = new Pool({
+  connectionString: url,
+  ssl: { rejectUnauthorized: false },
+  max: isPooler ? 10 : 5,
+  min: 1,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 15000,
+  allowExitOnIdle: false,
 });
 
-// ── Verified query wrapper ────────────────────────────────────
+pool.on('error', (err) => {
+  console.error('❌  DB pool error:', err.message);
+});
+
 const query = (text, params) => pool.query(text, params);
 
-// ── Test connection on startup ────────────────────────────────
+// ── Test on startup ───────────────────────────────────────────
 async function testConnection() {
   try {
     const res = await pool.query('SELECT NOW() AS now');
-    console.log(`✅  Database connected — server time: ${res.rows[0].now}`);
+    console.log(`✅  Database connected — ${res.rows[0].now}`);
   } catch (err) {
     console.error('❌  Database connection failed:', err.message);
-    console.error('    Check your DATABASE_URL in Railway → Variables.');
-    console.error('    It should look like:');
-    console.error('    postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres');
+    if (err.message.includes('ENETUNREACH') || err.message.includes('IPv6')) {
+      console.error('');
+      console.error('    ▶ IPv6 issue detected. Fix:');
+      console.error('    1. Go to Supabase → Settings → Database → Connection Pooling');
+      console.error('    2. Copy the Pooler connection string (ends with pooler.supabase.com:6543)');
+      console.error('    3. Update DATABASE_URL in Railway → Variables with that string');
+    } else if (err.message.includes('password')) {
+      console.error('    ▶ Wrong password. Reset at: Supabase → Settings → Database → Reset Password');
+    } else if (err.message.includes('ECONNREFUSED')) {
+      console.error('    ▶ Project may be paused. Go to Supabase dashboard and resume it.');
+    }
   }
 }
 

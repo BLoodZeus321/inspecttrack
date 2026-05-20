@@ -58,6 +58,24 @@ app.listen(PORT, () => {
   console.log(`✅  InspectTrack API running on port ${PORT}`);
   console.log(`🌍  Environment: ${process.env.NODE_ENV}`);
   startScheduler();
+  keepAlive();
 });
+
+// Keep-alive for Render free tier
+// Render spins down after 15 min idle. Pings every 14 min to prevent it.
+// RENDER_INTERNAL_HOSTNAME is only set on Render - so this won't run locally.
+function keepAlive() {
+  if (!process.env.RENDER_INTERNAL_HOSTNAME) return;
+  const url = `http://localhost:${PORT}/health`;
+  setInterval(async () => {
+    try {
+      await fetch(url);
+      console.log(`[KeepAlive] ping - ${new Date().toISOString()}`);
+    } catch (e) {
+      console.warn('[KeepAlive] failed:', e.message);
+    }
+  }, 14 * 60 * 1000);
+  console.log('[KeepAlive] started - pinging every 14 min');
+}
 
 module.exports = app;
