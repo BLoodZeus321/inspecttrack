@@ -47,9 +47,9 @@ export default function LoginPage() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>⚙️</div>
-          <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 800, margin: '0 0 6px' }}>InspectTrack</h1>
+          <h1 style={{ color: '#fff', fontSize: 28, fontWeight: 800, margin: '0 0 6px' }}>BHDC InspectTrack</h1>
           <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>
-            Equipment Inspection Management System
+            Inspection Management System
           </p>
         </div>
 
