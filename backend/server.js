@@ -12,11 +12,27 @@ const PORT = process.env.PORT || 4000;
 // ── Security ──────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL,
-    'http://localhost:3000',
-    'http://localhost:5173',
-  ].filter(Boolean),
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Render health checks)
+    if (!origin) return callback(null, true);
+
+    const allowed = [
+      process.env.FRONTEND_URL,
+      process.env.FRONTEND_URL_2,          // optional second frontend URL
+      'http://localhost:3000',
+      'http://localhost:5173',
+    ].filter(Boolean);
+
+    // Allow any Vercel preview URL for this project
+    const isVercel = origin.endsWith('.vercel.app');
+    const isAllowed = allowed.includes(origin) || isVercel;
+
+    if (isAllowed) return callback(null, true);
+
+    console.warn('[CORS] Blocked origin:', origin);
+    console.warn('[CORS] Allowed origins:', allowed);
+    callback(new Error('CORS: origin not allowed'));
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '5mb' }));
