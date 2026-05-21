@@ -79,6 +79,93 @@ router.post('/trigger-alerts', authenticate, async (req, res) => {
   res.json({ message: 'Alert check triggered. Watch server logs.' });
 });
 
+// GET /api/dashboard/debug-alerts  (admin — see what the scheduler sees right now)
+router.get('/debug-alerts', authenticate, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  try {
+    // Show all active equipment with inspection info
+    const { rows: all } = await query(`
+      SELECT
+        e.id, e.name, e.status,
+        c.name AS category,
+        c.alert_lead_days,
+        c.inspection_interval_days,
+        i.next_due_date,
+        i.inspection_date AS last_inspection_date,
+        (i.next_due_date - CURRENT_DATE) AS days_until_due,
+        CURRENT_DATE AS today
+      FROM equipment e
+      LEFT JOIN categories c ON e.category_id = c.id
+      LEFT JOIN LATERAL (
+        SELECT next_due_date, inspection_date
+        FROM inspections
+        WHERE equipment_id = e.id
+        ORDER BY inspection_date DESC LIMIT 1
+      ) i ON TRUE
+      WHERE e.status = 'active'
+      ORDER BY i.next_due_date ASC NULLS LAST
+    `);
+
+    // Show recipients
+    const { rows: catRecipients } = await query(`
+      SELECT ar.email, c.name AS category
+      FROM alert_recipients ar
+      JOIN categories c ON c.id = ar.category_id
+      WHERE ar.is_active = TRUE
+    `);
+    const { rows: globalRecipients } = await query(`
+      SELECT email FROM global_recipients WHERE is_active = TRUE
+    `);
+
+    // Analyse each item
+    const analysis = all.map(item => {
+      const days = item.days_until_due !== null ? parseInt(item.days_until_due) : null;
+      const leadDays = item.alert_lead_days || [];
+      let alertStatus = 'no_inspection';
+      let willAlert = false;
+      let reason = '';
+
+      if (days === null) {
+        reason = 'No inspection logged yet — log an inspection first';
+      } else if (days < 0) {
+        alertStatus = 'overdue';
+        willAlert = true;
+        reason = `Overdue by ${Math.abs(days)} days — daily overdue email`;
+      } else if (leadDays.includes(days)) {
+        alertStatus = 'alert_today';
+        willAlert = true;
+        reason = `${days} days until due — matches alert lead day`;
+      } else {
+        alertStatus = 'ok';
+        reason = `${days} days until due — alert fires at days: ${leadDays.join(', ')}`;
+      }
+
+      return {
+        name: item.name,
+        category: item.category,
+        today: item.today,
+        next_due_date: item.next_due_date,
+        days_until_due: days,
+        alert_lead_days: leadDays,
+        alert_status: alertStatus,
+        will_alert_today: willAlert,
+        reason,
+      };
+    });
+
+    res.json({
+      today: new Date().toISOString().split('T')[0],
+      total_equipment: all.length,
+      will_alert_today: analysis.filter(a => a.will_alert_today).length,
+      category_recipients: catRecipients,
+      global_recipients: globalRecipients,
+      equipment: analysis,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/dashboard/test-email  (admin — sends a real test email immediately)
 router.post('/test-email', authenticate, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
