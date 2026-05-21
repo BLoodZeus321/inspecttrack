@@ -19,7 +19,7 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
 
   const triggerAlerts = async () => {
     await api.post('/dashboard/trigger-alerts');

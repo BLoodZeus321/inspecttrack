@@ -84,7 +84,7 @@ function RecipientsPanel({ category }) {
     api.get(`/categories/${category.id}/recipients`).then(r => setRecipients(r.data)).catch(console.error);
   }, [category.id]);
 
-  useEffect(load, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const add = async e => {
     e.preventDefault(); setSaving(true); setError('');
@@ -160,7 +160,7 @@ function GlobalRecipientsSection() {
   const [error, setError]   = useState('');
 
   const load = () => api.get('/categories/global/recipients').then(r => setRecipients(r.data)).catch(console.error);
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
 
   const add = async e => {
     e.preventDefault(); setSaving(true); setError('');
@@ -226,7 +226,7 @@ export default function CategoriesPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(load, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const deleteCategory = async (id, name) => {
     if (!confirm(`Delete category "${name}"? Equipment in this category will be uncategorized.`)) return;

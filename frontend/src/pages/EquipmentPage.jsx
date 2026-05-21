@@ -89,7 +89,7 @@ export default function EquipmentPage() {
       .finally(() => setLoading(false));
   }, [search, alertStatus, category]);
 
-  useEffect(load, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const setFilter = (key, val) => {
     const p = new URLSearchParams(searchParams);

@@ -82,7 +82,7 @@ export default function EquipmentDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  useEffect(load, [load]);
+  useEffect(() => { load(); }, [load]);
 
   if (loading) return <Spinner />;
   if (!data)   return <div style={{ padding: 40, color: '#94a3b8' }}>Equipment not found.</div>;

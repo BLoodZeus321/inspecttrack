@@ -19,7 +19,7 @@ export function AlertLogsPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
 
   const trigger = async () => {
     await api.post('/dashboard/trigger-alerts');
@@ -136,7 +136,7 @@ export function UsersPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
+  useEffect(() => { load(); }, []);
 
   const updateUser = async (id, changes) => {
     try {
