@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { query } = require('../db/pool');
 const { authenticate } = require('../middleware/auth');
 const { runAlertCheck } = require('../services/alertScheduler');
+const { sendEmail } = require('../services/emailService');
 
 // GET /api/dashboard/stats
 router.get('/stats', authenticate, async (req, res) => {
@@ -82,7 +83,6 @@ router.post('/trigger-alerts', authenticate, async (req, res) => {
 router.post('/test-email', authenticate, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
 
-  const { sendEmail } = require('../services/emailService');
   const to = req.body.email || req.user.email;
 
   // Check env vars are set
