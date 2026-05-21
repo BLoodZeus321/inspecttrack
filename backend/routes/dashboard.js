@@ -143,8 +143,8 @@ function diagnoseSmtpError(msg) {
     return 'Wrong email password. Use an App Password (not your main password). For Office365: myaccount.microsoft.com → Security → App passwords. For Gmail: myaccount.google.com → Security → App passwords.';
   if (msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND'))
     return 'Cannot reach SMTP server. Check SMTP_HOST and SMTP_PORT in Render environment variables.';
-  if (msg.includes('ETIMEDOUT'))
-    return 'Connection timed out. Render may be blocking outbound SMTP on port 587. Try port 465 or use a transactional email service like Brevo (brevo.com).';
+  if (msg.includes('ETIMEDOUT') || msg.includes('timeout') || msg.includes('Timeout'))
+    return 'Render free tier blocks port 587 for most providers. Fix: Sign up at brevo.com (free), get SMTP credentials, update SMTP_HOST=smtp-relay.brevo.com, SMTP_PORT=587, SMTP_USER=your brevo email, SMTP_PASS=brevo smtp key.';
   if (msg.includes('certificate') || msg.includes('TLS') || msg.includes('SSL'))
     return 'TLS/SSL error. Add SMTP_TLS_REJECT=false to Render environment variables.';
   if (msg.includes('Greeting') || msg.includes('greeting'))

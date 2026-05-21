@@ -1,16 +1,19 @@
 const nodemailer = require('nodemailer');
 
 function createTransporter() {
+  const port   = parseInt(process.env.SMTP_PORT || '587');
+  const secure = port === 465;
   return nodemailer.createTransport({
     host:   process.env.SMTP_HOST,
-    port:   parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_PORT === '465',
+    port,
+    secure,
     auth:   { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    tls:    { rejectUnauthorized: false },
-    // Some providers need longer timeouts on Render
-    connectionTimeout: 15000,
-    greetingTimeout:   10000,
-    socketTimeout:     15000,
+    tls:    { rejectUnauthorized: false, ciphers: 'SSLv3' },
+    connectionTimeout: 20000,
+    greetingTimeout:   15000,
+    socketTimeout:     20000,
+    // Force IPv4 — Render doesn't support IPv6
+    family: 4,
   });
 }
 
