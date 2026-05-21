@@ -85,55 +85,56 @@ router.post('/test-email', authenticate, async (req, res) => {
 
   const to = req.body.email || req.user.email;
 
-  // Check env vars are set
-  const missing = ['SMTP_HOST','SMTP_PORT','SMTP_USER','SMTP_PASS','SMTP_FROM']
-    .filter(k => !process.env[k]);
+  // Check which method will be used
+  const usingAPI = !!process.env.BREVO_API_KEY;
+
+  // Check required env vars
+  const required = usingAPI
+    ? ['BREVO_API_KEY', 'SMTP_FROM']
+    : ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'];
+  const missing = required.filter(k => !process.env[k]);
   if (missing.length) {
     return res.status(400).json({
       error: `Missing environment variables: ${missing.join(', ')}`,
-      hint: 'Add these in Render → your service → Environment tab, then redeploy.',
+      hint: usingAPI
+        ? 'Add BREVO_API_KEY and SMTP_FROM in Render → Environment.'
+        : 'Add SMTP credentials in Render → Environment.',
     });
   }
 
   try {
-    await sendEmail({
+    const result = await sendEmail({
       to,
       subject: '✅ InspectTrack — Email Test Successful',
       html: `
         <div style="font-family:sans-serif;max-width:500px;margin:40px auto;padding:32px;
           background:#f0fdf4;border-radius:12px;border:2px solid #86efac;">
           <h2 style="color:#166534;margin:0 0 12px">✅ Email is working!</h2>
-          <p style="color:#374151;margin:0 0 8px">
-            Your InspectTrack email configuration is set up correctly.
-          </p>
-          <p style="color:#374151;margin:0 0 8px">
-            Alert emails will be sent automatically every day at the scheduled time.
-          </p>
+          <p style="color:#374151;margin:0 0 8px">InspectTrack email is configured correctly.</p>
+          <p style="color:#374151;margin:0 0 8px">Alert emails will fire automatically on schedule.</p>
           <hr style="border:none;border-top:1px solid #bbf7d0;margin:16px 0">
           <p style="color:#6b7280;font-size:12px;margin:0">
             Sent to: <strong>${to}</strong><br>
+            Method: ${usingAPI ? 'Brevo HTTP API' : 'SMTP'}<br>
             From: ${process.env.SMTP_FROM}<br>
-            Host: ${process.env.SMTP_HOST}:${process.env.SMTP_PORT}<br>
             Time: ${new Date().toISOString()}
           </p>
         </div>`,
     });
     res.json({
       success: true,
-      message: `Test email sent to ${to}. Check your inbox (and spam folder).`,
-      smtp_host: process.env.SMTP_HOST,
-      smtp_port: process.env.SMTP_PORT,
-      smtp_user: process.env.SMTP_USER,
-      sent_to:   to,
+      message: `Test email sent to ${to} via ${result.method}. Check your inbox (and spam folder).`,
+      method:  result.method,
+      sent_to: to,
     });
   } catch (err) {
     res.status(500).json({
       success: false,
       error:   err.message,
       hint:    diagnoseSmtpError(err.message),
+      method:  usingAPI ? 'brevo-api' : 'smtp',
       smtp_host: process.env.SMTP_HOST,
       smtp_port: process.env.SMTP_PORT,
-      smtp_user: process.env.SMTP_USER,
     });
   }
 });
