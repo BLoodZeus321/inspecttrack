@@ -23,8 +23,20 @@ export default function DashboardPage() {
 
   const triggerAlerts = async () => {
     await api.post('/dashboard/trigger-alerts');
-    setMsg('Alert check triggered! Watch your email and server logs.');
-    setTimeout(() => setMsg(''), 5000);
+    setMsg('Alert check triggered! Watch Alert Logs page for results.');
+    setTimeout(() => setMsg(''), 6000);
+  };
+
+  const testEmail = async () => {
+    const email = prompt('Send test email to:', user?.email || '');
+    if (!email) return;
+    try {
+      const res = await api.post('/dashboard/test-email', { email });
+      setMsg(`✅ ${res.message}`);
+    } catch (err) {
+      setMsg(`❌ Email failed: ${err.message}`);
+    }
+    setTimeout(() => setMsg(''), 10000);
   };
 
   if (loading) return <Spinner />;
@@ -44,7 +56,10 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', gap: 10 }}>
           <Button variant="secondary" onClick={load}>↻ Refresh</Button>
           {user?.role === 'admin' && (
-            <Button variant="secondary" onClick={triggerAlerts}>▷ Run Alert Check</Button>
+            <>
+              <Button variant="secondary" onClick={triggerAlerts}>▷ Run Alert Check</Button>
+              <Button variant="secondary" onClick={testEmail}>📧 Test Email</Button>
+            </>
           )}
         </div>
       </div>
