@@ -43,12 +43,19 @@ async function runAlertCheck() {
         if (result === 'sent')    sent++;
         if (result === 'skipped') skipped++;
         if (result === 'failed')  failed++;
-      } else if (item.alert_lead_days.includes(days)) {
-        // Today exactly matches a configured alert day
-        const results = await handleUpcoming(item, days);
-        sent    += results.sent;
-        skipped += results.skipped;
-        failed  += results.failed;
+      } else {
+        // Convert to integers — pg may return array elements as strings
+        const leadDays = (item.alert_lead_days || []).map(Number);
+        if (leadDays.includes(days)) {
+          // Today exactly matches a configured alert day
+          console.log(`[Scheduler] "${item.name}" matches alert day ${days} (lead days: ${leadDays.join(',')})`);
+          const results = await handleUpcoming(item, days);
+          sent    += results.sent;
+          skipped += results.skipped;
+          failed  += results.failed;
+        } else {
+          console.log(`[Scheduler] "${item.name}" — ${days}d until due, no match in [${leadDays.join(',')}]`);
+        }
       }
     }
 
@@ -108,11 +115,11 @@ async function getRecipients(equipmentId, categoryId) {
     SELECT DISTINCT email FROM (
       SELECT ar.email
       FROM   alert_recipients ar
-      WHERE  ar.category_id = $2 AND ar.is_active = TRUE
+      WHERE  ar.category_id = $1 AND ar.is_active = TRUE
       UNION
       SELECT email FROM global_recipients WHERE is_active = TRUE
     ) combined
-  `, [equipmentId, categoryId]);
+  `, [categoryId]);
   return rows.map(r => r.email);
 }
 
