@@ -1,4 +1,13 @@
 require('dotenv').config();
+
+// Log uncaught crashes clearly in Render logs
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.message);
+  console.error(err.stack);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason);
+});
 const express   = require('express');
 const cors      = require('cors');
 const helmet    = require('helmet');
@@ -11,30 +20,9 @@ const PORT = process.env.PORT || 4000;
 
 // ── Security ──────────────────────────────────────────────────
 app.use(helmet());
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, Render health checks)
-    if (!origin) return callback(null, true);
-
-    const allowed = [
-      process.env.FRONTEND_URL,
-      process.env.FRONTEND_URL_2,          // optional second frontend URL
-      'http://localhost:3000',
-      'http://localhost:5173',
-    ].filter(Boolean);
-
-    // Allow any Vercel preview URL for this project
-    const isVercel = origin.endsWith('.vercel.app');
-    const isAllowed = allowed.includes(origin) || isVercel;
-
-    if (isAllowed) return callback(null, true);
-
-    console.warn('[CORS] Blocked origin:', origin);
-    console.warn('[CORS] Allowed origins:', allowed);
-    callback(new Error('CORS: origin not allowed'));
-  },
-  credentials: true,
-}));
+// Open CORS — allows all origins
+// This is safe for an internal tool behind login (JWT protects all data routes)
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '5mb' }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 500 }));
 
@@ -78,18 +66,16 @@ app.listen(PORT, () => {
 });
 
 // Keep-alive for Render free tier
-// Render spins down after 15 min idle. Pings every 14 min to prevent it.
-// RENDER_INTERNAL_HOSTNAME is only set on Render - so this won't run locally.
+// Uses http module (built-in) instead of fetch — works on all Node versions
 function keepAlive() {
   if (!process.env.RENDER_INTERNAL_HOSTNAME) return;
-  const url = `http://localhost:${PORT}/health`;
-  setInterval(async () => {
-    try {
-      await fetch(url);
-      console.log(`[KeepAlive] ping - ${new Date().toISOString()}`);
-    } catch (e) {
+  const http = require('http');
+  setInterval(() => {
+    http.get(`http://localhost:${PORT}/health`, (res) => {
+      console.log(`[KeepAlive] ping ${res.statusCode} - ${new Date().toISOString()}`);
+    }).on('error', (e) => {
       console.warn('[KeepAlive] failed:', e.message);
-    }
+    });
   }, 14 * 60 * 1000);
   console.log('[KeepAlive] started - pinging every 14 min');
 }
