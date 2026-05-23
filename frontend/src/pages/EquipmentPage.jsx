@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 function EquipmentForm({ initial = {}, categories, onSave, onClose }) {
   const [form, setForm] = useState({
     name: '', asset_tag: '', serial_number: '', category_id: '',
-    location: '', manufacturer: '', model: '', purchase_date: '',
+    location: '', rig_number: '', manufacturer: '', model: '', purchase_date: '',
     status: 'active', notes: '', ...initial,
   });
   const [saving, setSaving] = useState(false);
@@ -33,13 +33,34 @@ function EquipmentForm({ initial = {}, categories, onSave, onClose }) {
       <Input label="Equipment / Tool Name *" value={form.name} onChange={set('name')} required placeholder="e.g. Fire Extinguisher - Level 3" />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <Input label="Asset Tag" value={form.asset_tag || ''} onChange={set('asset_tag')} placeholder="EQ-0042" />
-        <Input label="Serial Number" value={form.serial_number || ''} onChange={set('serial_number')} />
+        <Input label="Serial Number *" value={form.serial_number || ''} onChange={set('serial_number')} required placeholder="Manufacturer serial no." />
       </div>
       <Select label="Category *" value={form.category_id || ''} onChange={set('category_id')}>
         <option value="">— Select category —</option>
         {categories.map(c => <option key={c.id} value={c.id}>{c.name} (every {c.inspection_interval_days}d)</option>)}
       </Select>
-      <Input label="Location" value={form.location || ''} onChange={set('location')} placeholder="Building A, Floor 2" />
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Rig / Location *</label>
+        <select value={['BHDC-67','BHDC-68','BHDC-117','BHDC-118','BHDC-YARD'].includes(form.rig_number) ? form.rig_number : form.rig_number ? 'custom' : ''}
+          onChange={e => {
+            if (e.target.value === 'custom') { setForm(f => ({...f, rig_number: 'custom', location: ''})); }
+            else { setForm(f => ({...f, rig_number: e.target.value, location: e.target.value})); }
+          }}
+          required
+          style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 14, background: '#fff', fontFamily: 'inherit', marginBottom: 8 }}>
+          <option value="">— Select Rig / Location —</option>
+          <option value="BHDC-67">BHDC-67</option>
+          <option value="BHDC-68">BHDC-68</option>
+          <option value="BHDC-117">BHDC-117</option>
+          <option value="BHDC-118">BHDC-118</option>
+          <option value="BHDC-YARD">BHDC-YARD</option>
+          <option value="custom">Custom Location</option>
+        </select>
+        {(form.rig_number === 'custom' || (!['BHDC-67','BHDC-68','BHDC-117','BHDC-118','BHDC-YARD','','custom'].includes(form.rig_number))) && (
+          <input placeholder="Enter custom location" value={form.location || ''} onChange={e => setForm(f => ({...f, location: e.target.value, rig_number: e.target.value}))}
+            required style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 14, fontFamily: 'inherit' }} />
+        )}
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <Input label="Manufacturer" value={form.manufacturer || ''} onChange={set('manufacturer')} />
         <Input label="Model" value={form.model || ''} onChange={set('model')} />
@@ -148,7 +169,14 @@ export default function EquipmentPage() {
           <option value="">All Categories</option>
           {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
         </select>
-        {(search || alertStatus || category) && (
+        <select value={searchParams.get('rig') || ''} onChange={e => setFilter('rig', e.target.value)}
+          style={{ padding: '8px 14px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13, background: '#fff', cursor: 'pointer' }}>
+          <option value="">All Rigs</option>
+          {['BHDC-67','BHDC-68','BHDC-117','BHDC-118','BHDC-YARD'].map(r => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+        {(search || alertStatus || category || searchParams.get('rig')) && (
           <Button variant="ghost" size="sm" onClick={() => setSearchParams({})}>✕ Clear filters</Button>
         )}
       </div>
@@ -163,7 +191,7 @@ export default function EquipmentPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                    {['Name','Asset Tag','Category','Location','Last Inspected','Next Due','Status',''].map(h => (
+                    {['Name','Asset Tag','Category','Rig','Location','Last Inspected','Next Due','Status',''].map(h => (
                       <th key={h} style={{ padding: '11px 16px', textAlign: 'left', fontWeight: 600,
                         color: '#64748b', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
@@ -191,7 +219,8 @@ export default function EquipmentPage() {
                           }}>{eq.category}</span>
                         ) : '—'}
                       </td>
-                      <td style={{ padding: '13px 16px', color: '#64748b' }}>{eq.location || '—'}</td>
+                      <td style={{ padding: '13px 16px', color: '#64748b' }}>{eq.rig_number || '—'}</td>
+                      <td style={{ padding: '13px 16px', color: '#64748b' }}>{eq.location && eq.location !== eq.rig_number ? eq.location : '—'}</td>
                       <td style={{ padding: '13px 16px', color: '#64748b' }}>
                         {eq.last_inspection_date ? (
                           <div>

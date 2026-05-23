@@ -106,13 +106,13 @@ router.get('/:id/recipients', authenticate, async (req, res) => {
 
 // POST /api/categories/:id/recipients  (admin)
 router.post('/:id/recipients', authenticate, requireAdmin, async (req, res) => {
-  const { email, name } = req.body;
+  const { email, name, rig_number } = req.body;
   if (!email) return res.status(400).json({ error: 'Email required' });
   try {
     const { rows } = await query(`
-      INSERT INTO alert_recipients (category_id, email, name)
-      VALUES ($1,$2,$3) ON CONFLICT (category_id, email) DO NOTHING RETURNING *
-    `, [req.params.id, email.toLowerCase(), name]);
+      INSERT INTO alert_recipients (category_id, email, name, rig_number)
+      VALUES ($1,$2,$3,$4) ON CONFLICT (category_id, email) DO UPDATE SET name=$3, rig_number=$4 RETURNING *
+    `, [req.params.id, email.toLowerCase(), name, rig_number || null]);
     res.status(201).json({ data: rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

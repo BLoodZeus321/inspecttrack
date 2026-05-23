@@ -3,29 +3,33 @@ const Joi     = require('joi');
 const { query } = require('../db/pool');
 const { authenticate, requireInspector } = require('../middleware/auth');
 
+const RIG_LOCATIONS = ['BHDC-67','BHDC-68','BHDC-117','BHDC-118','BHDC-YARD'];
+
 const schema = Joi.object({
   name:          Joi.string().max(200).required(),
   asset_tag:     Joi.string().max(100).allow('', null),
-  serial_number: Joi.string().max(100).allow('', null),
+  serial_number: Joi.string().max(100).required(),
   category_id:   Joi.string().uuid().allow(null),
-  location:      Joi.string().max(200).allow('', null),
+  location:      Joi.string().max(200).required(),
   manufacturer:  Joi.string().max(100).allow('', null),
   model:         Joi.string().max(100).allow('', null),
   purchase_date: Joi.date().allow(null),
   status:        Joi.string().valid('active','retired','under_repair').default('active'),
   notes:         Joi.string().allow('', null),
+  rig_number:    Joi.string().max(50).allow('', null),
 });
 
 // GET /api/equipment
 router.get('/', authenticate, async (req, res) => {
   try {
-    const { search, alert_status, category, status } = req.query;
+    const { search, alert_status, category, status, rig } = req.query;
     let conditions = ["e.status != 'retired'"], params = [], i = 1;
 
     if (search)       { conditions.push(`(e.name ILIKE $${i} OR e.asset_tag ILIKE $${i})`); params.push(`%${search}%`); i++; }
     if (alert_status) { conditions.push(`es.alert_status = $${i++}`); params.push(alert_status); }
     if (category)     { conditions.push(`c.name ILIKE $${i++}`); params.push(`%${category}%`); }
     if (status)       { conditions.push(`e.status = $${i++}`); params.push(status); }
+    if (rig)          { conditions.push(`e.rig_number = $${i++}`); params.push(rig); }
     if (req.query.include_retired === 'true') conditions = conditions.filter(c => !c.includes('retired'));
 
     const where = 'WHERE ' + conditions.join(' AND ');
@@ -84,10 +88,10 @@ router.post('/', authenticate, requireInspector, async (req, res) => {
   try {
     const { rows } = await query(`
       INSERT INTO equipment
-        (name,asset_tag,serial_number,category_id,location,manufacturer,model,purchase_date,status,notes,created_by)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *
+        (name,asset_tag,serial_number,category_id,location,rig_number,manufacturer,model,purchase_date,status,notes,created_by)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *
     `, [value.name,value.asset_tag,value.serial_number,value.category_id,value.location,
-        value.manufacturer,value.model,value.purchase_date,value.status,value.notes,req.user.id]);
+        value.rig_number,value.manufacturer,value.model,value.purchase_date,value.status,value.notes,req.user.id]);
     res.status(201).json({ data: rows[0] });
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'Asset tag already exists' });
@@ -103,10 +107,10 @@ router.put('/:id', authenticate, requireInspector, async (req, res) => {
     const { rows } = await query(`
       UPDATE equipment SET
         name=$1,asset_tag=$2,serial_number=$3,category_id=$4,location=$5,
-        manufacturer=$6,model=$7,purchase_date=$8,status=$9,notes=$10,updated_at=NOW()
-      WHERE id=$11 RETURNING *
+        rig_number=$6,manufacturer=$7,model=$8,purchase_date=$9,status=$10,notes=$11,updated_at=NOW()
+      WHERE id=$12 RETURNING *
     `, [value.name,value.asset_tag,value.serial_number,value.category_id,value.location,
-        value.manufacturer,value.model,value.purchase_date,value.status,value.notes,req.params.id]);
+        value.rig_number,value.manufacturer,value.model,value.purchase_date,value.status,value.notes,req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
     res.json({ data: rows[0] });
   } catch (err) { res.status(500).json({ error: err.message }); }

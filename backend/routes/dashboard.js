@@ -54,7 +54,7 @@ router.get('/stats', authenticate, async (req, res) => {
 
       // Full overdue list
       query(`
-        SELECT id, name, asset_tag, location, category, category_color,
+        SELECT id, name, asset_tag, location, rig_number, category, category_color,
                next_due_date, days_until_due, last_inspection_date
         FROM equipment_status
         WHERE alert_status='overdue' AND status='active'

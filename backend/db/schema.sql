@@ -142,3 +142,8 @@ INSERT INTO categories (name, description, inspection_interval_days, alert_lead_
   ('Electrical Tools',   'Portable electrical equipment',    365, '{30,7}',      '#3B82F6'),
   ('Hand Tools',         'Manual hand tools',                730, '{60,30}',     '#8B5CF6'),
   ('Vehicle / Forklift', 'Company vehicles and forklifts',   365, '{45,30,14}',  '#06B6D4');
+
+-- ── Migration: Add rig_number column ─────────────────────────
+-- Run this in Supabase SQL Editor if upgrading an existing install
+-- (already included for fresh installs via the equipment table above)
+-- ALTER TABLE equipment ADD COLUMN IF NOT EXISTS rig_number VARCHAR(50);

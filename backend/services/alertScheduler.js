@@ -11,7 +11,7 @@ async function runAlertCheck() {
     // Fetch all active equipment that has an upcoming or overdue inspection
     const { rows: items } = await query(`
       SELECT
-        e.id, e.name, e.asset_tag, e.serial_number, e.location,
+        e.id, e.name, e.asset_tag, e.serial_number, e.location, e.rig_number,
         c.id           AS category_id,
         c.name         AS category,
         c.alert_lead_days,
@@ -67,7 +67,7 @@ async function runAlertCheck() {
 
 // ─────────────────────────────────────────────────────────────
 async function handleUpcoming(item, daysUntilDue) {
-  const recipients = await getRecipients(item.id, item.category_id);
+  const recipients = await getRecipients(item.id, item.category_id, item.rig_number);
   let sent = 0, skipped = 0, failed = 0;
 
   for (const email of recipients) {
@@ -90,7 +90,7 @@ async function handleUpcoming(item, daysUntilDue) {
 }
 
 async function handleOverdue(item, daysOverdue) {
-  const recipients = await getRecipients(item.id, item.category_id);
+  const recipients = await getRecipients(item.id, item.category_id, item.rig_number);
 
   for (const email of recipients) {
     const already = await sentToday(item.id, email, -daysOverdue, 'overdue');
@@ -110,16 +110,21 @@ async function handleOverdue(item, daysOverdue) {
 }
 
 // ─────────────────────────────────────────────────────────────
-async function getRecipients(equipmentId, categoryId) {
+async function getRecipients(equipmentId, categoryId, rigNumber) {
+  // Recipients matched if:
+  //   a) category matches AND (rig_number is NULL = all rigs OR rig_number matches this equipment's rig)
+  //   b) OR they are global recipients
   const { rows } = await query(`
     SELECT DISTINCT email FROM (
       SELECT ar.email
       FROM   alert_recipients ar
-      WHERE  ar.category_id = $1 AND ar.is_active = TRUE
+      WHERE  ar.category_id = $1
+        AND  ar.is_active = TRUE
+        AND  (ar.rig_number IS NULL OR ar.rig_number = $2)
       UNION
       SELECT email FROM global_recipients WHERE is_active = TRUE
     ) combined
-  `, [categoryId]);
+  `, [categoryId, rigNumber || null]);
   return rows.map(r => r.email);
 }
 

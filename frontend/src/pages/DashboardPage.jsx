@@ -93,7 +93,7 @@ export default function DashboardPage() {
             {data?.overdueList?.length ? (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead><tr style={{ background: '#fef2f2' }}>
-                  {['Equipment','Category','Location','Overdue by'].map(h => (
+                  {['Equipment','Category','Rig','Overdue by'].map(h => (
                     <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 600,
                       color: '#991b1b', borderBottom: '1px solid #fecaca', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
@@ -114,7 +114,7 @@ export default function DashboardPage() {
                           {eq.category || '—'}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 14px', color: '#64748b' }}>{eq.location || '—'}</td>
+                      <td style={{ padding: '10px 14px', color: '#64748b' }}>{eq.rig_number || eq.location || '—'}</td>
                       <td style={{ padding: '10px 14px', fontWeight: 700, color: '#dc2626' }}>
                         {Math.abs(parseInt(eq.days_until_due))}d
                       </td>

@@ -145,7 +145,7 @@ function buildExpiryEmail({ equipment, daysUntilDue, nextDueDate, lastInspection
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:24px;">
       ${infoRow('Asset Tag',      equipment.asset_tag     || '—')}
       ${infoRow('Category',       category)}
-      ${infoRow('Location',       equipment.location      || '—')}
+      ${infoRow('Rig / Location', equipment.rig_number ? equipment.rig_number + (equipment.location !== equipment.rig_number ? ' — ' + equipment.location : '') : equipment.location || '—')}
       ${infoRow('Serial No.',     equipment.serial_number || '—')}
       ${infoRow('Due Date',       `<strong style="color:${accent}">${fmtDate(nextDueDate)}</strong>`)}
       ${infoRow('Days Remaining', `<strong style="color:${accent}">${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}</strong>`)}
@@ -181,7 +181,7 @@ function buildOverdueEmail({ equipment, daysOverdue, lastInspection, category })
     <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(0,0,0,.2);border-radius:10px;border:1px solid rgba(255,255,255,.1);margin-bottom:24px;">
       ${infoRow('Asset Tag',      equipment.asset_tag     || '—',  'rgba(255,255,255,.6)', '#fff')}
       ${infoRow('Category',       category,                         'rgba(255,255,255,.6)', '#fff')}
-      ${infoRow('Location',       equipment.location      || '—',  'rgba(255,255,255,.6)', '#fff')}
+      ${infoRow('Rig / Location', equipment.rig_number ? equipment.rig_number + (equipment.location !== equipment.rig_number ? ' — ' + equipment.location : '') : equipment.location || '—', 'rgba(255,255,255,.6)', '#fff')}
       ${infoRow('Last Inspected', lastInspection ? fmtDate(lastInspection) : '<em style="opacity:.5">Never</em>', 'rgba(255,255,255,.6)', '#fff')}
       ${infoRow('Days Overdue',   `<strong style="color:#fca5a5">${daysOverdue} days</strong>`, 'rgba(255,255,255,.6)', '#fff')}
     </table>

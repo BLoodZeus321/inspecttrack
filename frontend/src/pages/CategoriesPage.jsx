@@ -76,7 +76,7 @@ function CategoryForm({ initial = {}, onSave, onClose }) {
 // ── Recipients Panel ──────────────────────────────────────────
 function RecipientsPanel({ category }) {
   const [recipients, setRecipients] = useState([]);
-  const [form, setForm]   = useState({ name: '', email: '' });
+  const [form, setForm]   = useState({ name: '', email: '', rig_number: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
 
@@ -90,7 +90,7 @@ function RecipientsPanel({ category }) {
     e.preventDefault(); setSaving(true); setError('');
     try {
       await api.post(`/categories/${category.id}/recipients`, form);
-      setForm({ name: '', email: '' });
+      setForm({ name: '', email: '', rig_number: '' });
       load();
     } catch (err) { setError(err.message); }
     finally { setSaving(false); }
@@ -111,14 +111,21 @@ function RecipientsPanel({ category }) {
 
       {error && <AlertBanner type="error" message={error} onClose={() => setError('')} />}
 
-      <form onSubmit={add} style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+      <form onSubmit={add} style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <input placeholder="Name (optional)" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-          style={{ padding: '8px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13, width: 160, fontFamily: 'inherit' }} />
+          style={{ padding: '8px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13, width: 140, fontFamily: 'inherit' }} />
         <input placeholder="email@company.com *" type="email" required value={form.email}
           onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-          style={{ padding: '8px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13, flex: 1, minWidth: 200, fontFamily: 'inherit' }} />
+          style={{ padding: '8px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13, flex: 1, minWidth: 180, fontFamily: 'inherit' }} />
+        <select value={form.rig_number} onChange={e => setForm(f => ({ ...f, rig_number: e.target.value }))}
+          style={{ padding: '8px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13, background: '#fff', fontFamily: 'inherit' }}>
+          <option value="">All Rigs</option>
+          {['BHDC-67','BHDC-68','BHDC-117','BHDC-118','BHDC-YARD'].map(r => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
         <Button type="submit" variant="success" disabled={saving} size="sm">
-          {saving ? 'Adding…' : '+ Add Recipient'}
+          {saving ? 'Adding…' : '+ Add'}
         </Button>
       </form>
 
@@ -138,6 +145,8 @@ function RecipientsPanel({ category }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{r.name || r.email}</div>
               {r.name && <div style={{ fontSize: 12, color: '#64748b' }}>{r.email}</div>}
+              {r.rig_number && <div style={{ fontSize: 11, color: '#3b82f6', fontWeight: 600, marginTop: 2 }}>🏗 {r.rig_number} only</div>}
+              {!r.rig_number && <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>All rigs</div>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 11, background: '#f0fdf4', color: '#16a34a', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
@@ -155,7 +164,7 @@ function RecipientsPanel({ category }) {
 // ── Global Recipients ─────────────────────────────────────────
 function GlobalRecipientsSection() {
   const [recipients, setRecipients] = useState([]);
-  const [form, setForm]   = useState({ name: '', email: '' });
+  const [form, setForm]   = useState({ name: '', email: '', rig_number: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
 

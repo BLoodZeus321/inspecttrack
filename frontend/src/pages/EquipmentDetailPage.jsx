@@ -123,7 +123,8 @@ export default function EquipmentDetailPage() {
           <div style={{ display: 'flex', gap: 16, fontSize: 13, color: '#64748b', flexWrap: 'wrap' }}>
             {eq.asset_tag    && <span>🏷 {eq.asset_tag}</span>}
             {eq.category     && <span style={{ color: eq.category_color, fontWeight: 600 }}>● {eq.category}</span>}
-            {eq.location     && <span>📍 {eq.location}</span>}
+            {eq.rig_number   && <span>🏗 {eq.rig_number}</span>}
+            {eq.location && eq.location !== eq.rig_number && <span>📍 {eq.location}</span>}
           </div>
         </div>
         {canEdit && (
@@ -177,6 +178,8 @@ export default function EquipmentDetailPage() {
               textTransform: 'uppercase', letterSpacing: '.6px' }}>Equipment Details</h3>
             <InfoRow label="Name"          value={eq.name} />
             <InfoRow label="Asset Tag"     value={eq.asset_tag} />
+            <InfoRow label="Rig"           value={eq.rig_number} />
+            <InfoRow label="Location"      value={eq.location && eq.location !== eq.rig_number ? eq.location : null} />
             <InfoRow label="Serial Number" value={eq.serial_number} />
             <InfoRow label="Manufacturer"  value={eq.manufacturer} />
             <InfoRow label="Model"         value={eq.model} />
@@ -187,7 +190,7 @@ export default function EquipmentDetailPage() {
             <h3 style={{ fontSize: 14, fontWeight: 700, margin: '0 0 12px', color: '#64748b',
               textTransform: 'uppercase', letterSpacing: '.6px' }}>Inspection Schedule</h3>
             <InfoRow label="Category"  value={<span style={{ color: eq.category_color, fontWeight: 700 }}>{eq.category}</span>} />
-            <InfoRow label="Location"  value={eq.location} />
+            <InfoRow label="Rig"       value={eq.rig_number} />
             <InfoRow label="Interval"  value={eq.inspection_interval_days ? `Every ${eq.inspection_interval_days} days` : '—'} />
             <InfoRow label="Alert Days" value={eq.alert_lead_days?.join(', ') + ' days before due'} />
             <InfoRow label="Next Due"  value={<span style={{ fontWeight: 700, color: statusColors[eq.alert_status] }}>{fmtDate(eq.next_due_date)}</span>} />
