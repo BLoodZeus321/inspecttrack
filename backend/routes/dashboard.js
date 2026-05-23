@@ -79,6 +79,45 @@ router.post('/trigger-alerts', authenticate, async (req, res) => {
   res.json({ message: 'Alert check triggered. Watch server logs.' });
 });
 
+// GET /api/dashboard/alert-logs  — full paginated alert log with filters
+router.get('/alert-logs', authenticate, async (req, res) => {
+  try {
+    const { status, alert_type, rig, days = 30 } = req.query;
+    let conditions = [`al.sent_at >= NOW() - INTERVAL '${parseInt(days)} days'`];
+    let params = [];
+    let i = 1;
+
+    if (status)     { conditions.push(`al.status = $${i++}`);     params.push(status); }
+    if (alert_type) { conditions.push(`al.alert_type = $${i++}`); params.push(alert_type); }
+    if (rig)        { conditions.push(`e.rig_number = $${i++}`);   params.push(rig); }
+
+    const where = 'WHERE ' + conditions.join(' AND ');
+
+    const { rows } = await query(`
+      SELECT
+        al.*,
+        e.name        AS equipment_name,
+        e.asset_tag,
+        e.rig_number,
+        e.location,
+        c.name        AS category
+      FROM alert_log al
+      JOIN equipment e ON e.id = al.equipment_id
+      LEFT JOIN categories c ON c.id = e.category_id
+      ${where}
+      ORDER BY al.sent_at DESC
+      LIMIT 200
+    `, params);
+
+    // Summary counts
+    const total   = rows.length;
+    const sent    = rows.filter(r => r.status === 'sent').length;
+    const failed  = rows.filter(r => r.status === 'failed').length;
+
+    res.json({ data: rows, total, sent, failed });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // GET /api/dashboard/debug-alerts  (admin — see what the scheduler sees right now)
 router.get('/debug-alerts', authenticate, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });

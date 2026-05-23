@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { to: '/equipment',   label: 'Equipment & Tools',  icon: '⚙️', exact: false },
   { to: '/categories',  label: 'Categories & Alerts',icon: '🏷️', exact: false },
   { to: '/alerts',      label: 'Alert Logs',         icon: '🔔', exact: false },
+  { to: '/import',      label: 'Import',             icon: '📥', exact: false },
 ];
 
 export default function Navbar() {

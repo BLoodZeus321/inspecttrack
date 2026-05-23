@@ -32,6 +32,7 @@ app.use('/api/equipment',   require('./routes/equipment'));
 app.use('/api/inspections', require('./routes/inspections'));
 app.use('/api/categories',  require('./routes/categories'));
 app.use('/api/dashboard',   require('./routes/dashboard'));
+app.use('/api/import',      require('./routes/import'));
 
 // ── Health check ──────────────────────────────────────────────
 app.get('/health', async (req, res) => {

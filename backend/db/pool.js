@@ -60,4 +60,6 @@ async function testConnection() {
 
 testConnection();
 
-module.exports = { query, pool };
+const getClient = () => pool.connect();
+
+module.exports = { query, pool, getClient };

@@ -8,6 +8,7 @@ import EquipmentDetailPage from './pages/EquipmentDetailPage';
 import CategoriesPage from './pages/CategoriesPage';
 import { AlertLogsPage, UsersPage } from './pages/AlertLogsPage';
 import ProfilePage from './pages/ProfilePage';
+import ImportPage from './pages/ImportPage';
 import { Spinner } from './components/UI';
 
 // ── Protected route wrapper ───────────────────────────────────
@@ -61,6 +62,9 @@ function AppShell() {
       } />
       <Route path="/profile" element={
         <Protected><Layout><ProfilePage /></Layout></Protected>
+      } />
+      <Route path="/import" element={
+        <Protected><Layout><ImportPage /></Layout></Protected>
       } />
 
       {/* Admin only */}
