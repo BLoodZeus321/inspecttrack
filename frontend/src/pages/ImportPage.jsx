@@ -14,6 +14,10 @@ const TEMPLATE_COLS = [
   'Model',
   'Purchase Date',
   'Notes',
+  'Inspected By',
+  'Inspection Date',
+  'Inspection Result',
+  'Inspection Notes',
 ];
 
 const SAMPLE_ROWS = [
@@ -27,6 +31,10 @@ const SAMPLE_ROWS = [
     'Model':                 'CT3',
     'Purchase Date':         '2024-01-15',
     'Notes':                 '3 Ton capacity',
+    'Inspected By':          'John Smith',
+    'Inspection Date':       '2024-01-20',
+    'Inspection Result':     'pass',
+    'Inspection Notes':      'All components in good condition',
   },
   {
     'Equipment / Tool Name': 'Fire Extinguisher CO2',
@@ -38,6 +46,10 @@ const SAMPLE_ROWS = [
     'Model':                 'CO2-5KG',
     'Purchase Date':         '2024-03-10',
     'Notes':                 '5kg CO2',
+    'Inspected By':          '',
+    'Inspection Date':       '',
+    'Inspection Result':     '',
+    'Inspection Notes':      '',
   },
 ];
 
@@ -52,10 +64,12 @@ function downloadTemplate() {
     ['1. Fill in the "Equipment Data" sheet with your equipment details'],
     ['2. Equipment / Tool Name, Serial Number, Category and Rig / Location are REQUIRED'],
     ['3. Category must exactly match one of your categories in InspectTrack'],
-    ['4. Rig / Location must be one of: BHDC-67, BHDC-68, BHDC-117, BHDC-118, BHDC-YARD, or a custom location'],
-    ['5. Purchase Date format: YYYY-MM-DD (e.g. 2024-01-15)'],
-    ['6. Do not change column headers'],
-    ['7. Remove these sample rows before importing your real data'],
+    ['4. Rig / Location: BHDC-67, BHDC-68, BHDC-117, BHDC-118, BHDC-YARD, or custom'],
+    ['5. Purchase Date and Inspection Date format: YYYY-MM-DD (e.g. 2024-01-15)'],
+    ['6. Inspection Result must be: pass, fail, or conditional (leave blank if no inspection yet)'],
+    ['7. To log an inspection, fill Inspected By + Inspection Date + Inspection Result together'],
+    ['8. Do not change column headers'],
+    ['9. Delete the sample rows before importing your real data'],
     [''],
     ['VALID CATEGORIES (copy exactly):'],
     ['Fire Extinguisher'],
@@ -73,6 +87,11 @@ function downloadTemplate() {
     ['BHDC-118'],
     ['BHDC-YARD'],
     ['Or any custom location name'],
+    [''],
+    ['INSPECTION RESULT VALUES:'],
+    ['pass'],
+    ['fail'],
+    ['conditional'],
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
   wsInstr['!cols'] = [{ wch: 60 }];
@@ -92,6 +111,10 @@ function downloadTemplate() {
     { wch: 14 }, // Model
     { wch: 14 }, // Purchase Date
     { wch: 30 }, // Notes
+    { wch: 20 }, // Inspected By
+    { wch: 16 }, // Inspection Date
+    { wch: 20 }, // Inspection Result
+    { wch: 30 }, // Inspection Notes
   ];
 
   XLSX.utils.book_append_sheet(wb, wsData, 'Equipment Data');
@@ -109,7 +132,7 @@ export default function ImportPage() {
   const [error, setError]       = useState('');
   const [result, setResult]     = useState(null);
 
-  const canEdit = ['admin','inspector'].includes(user?.role);
+  const canEdit = ['admin','representative'].includes(user?.role);
 
   const handleFile = (e) => {
     const file = e.target.files[0];
@@ -382,6 +405,9 @@ export default function ImportPage() {
           </h2>
           <p style={{ fontSize: 16, color: '#374151', margin: '0 0 24px' }}>
             <strong>{result.inserted}</strong> equipment records have been added to InspectTrack.
+          {result.inspections_logged > 0 && (
+            <span> <strong>{result.inspections_logged}</strong> inspection records also logged.</span>
+          )}
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <Button onClick={() => window.location.href = '/equipment'}>View Equipment List</Button>

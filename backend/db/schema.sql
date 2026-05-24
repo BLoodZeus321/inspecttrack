@@ -12,7 +12,7 @@ CREATE TABLE users (
   email         VARCHAR(200) NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   role          VARCHAR(20) NOT NULL DEFAULT 'viewer'
-                CHECK (role IN ('admin','inspector','viewer')),
+                CHECK (role IN ('admin','representative','viewer')),
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ DEFAULT NOW(),
   updated_at    TIMESTAMPTZ DEFAULT NOW()

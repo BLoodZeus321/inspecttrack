@@ -1,7 +1,7 @@
 const router  = require('express').Router();
 const Joi     = require('joi');
 const { query } = require('../db/pool');
-const { authenticate, requireInspector } = require('../middleware/auth');
+const { authenticate, requireRepresentative } = require('../middleware/auth');
 
 const RIG_LOCATIONS = ['BHDC-67','BHDC-68','BHDC-117','BHDC-118','BHDC-YARD'];
 
@@ -82,7 +82,7 @@ router.get('/:id', authenticate, async (req, res) => {
 });
 
 // POST /api/equipment
-router.post('/', authenticate, requireInspector, async (req, res) => {
+router.post('/', authenticate, requireRepresentative, async (req, res) => {
   const { error, value } = schema.validate(req.body);
   if (error) return res.status(400).json({ error: error.details[0].message });
   try {
@@ -100,7 +100,7 @@ router.post('/', authenticate, requireInspector, async (req, res) => {
 });
 
 // PUT /api/equipment/:id
-router.put('/:id', authenticate, requireInspector, async (req, res) => {
+router.put('/:id', authenticate, requireRepresentative, async (req, res) => {
   const { error, value } = schema.validate(req.body);
   if (error) return res.status(400).json({ error: error.details[0].message });
   try {

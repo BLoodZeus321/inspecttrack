@@ -173,7 +173,7 @@ export default function DashboardPage() {
             {data?.recentInspections?.length ? (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead><tr style={{ background: '#f8fafc' }}>
-                  {['Equipment','Inspector','Date','Result'].map(h => (
+                  {['Equipment','Representative','Date','Result'].map(h => (
                     <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 600,
                       color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>{h}</th>
                   ))}

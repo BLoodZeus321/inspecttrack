@@ -1,10 +1,10 @@
 const router  = require('express').Router();
 const Joi     = require('joi');
 const { query } = require('../db/pool');
-const { authenticate, requireInspector } = require('../middleware/auth');
+const { authenticate, requireRepresentative } = require('../middleware/auth');
 
 // POST /api/inspections
-router.post('/', authenticate, requireInspector, async (req, res) => {
+router.post('/', authenticate, requireRepresentative, async (req, res) => {
   const schema = Joi.object({
     equipment_id:    Joi.string().uuid().required(),
     inspected_by:    Joi.string().max(100).required(),

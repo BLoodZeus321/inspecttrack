@@ -1,6 +1,6 @@
 const cron   = require('node-cron');
 const { query } = require('../db/pool');
-const { sendEmail, buildExpiryEmail, buildOverdueEmail } = require('./emailService');
+const { sendEmail, buildGroupedExpiryEmail, buildGroupedOverdueEmail } = require('./emailService');
 
 // ─────────────────────────────────────────────────────────────
 async function runAlertCheck() {
@@ -8,7 +8,7 @@ async function runAlertCheck() {
   console.log(`\n[Scheduler] ▶ Alert check started at ${ts}`);
 
   try {
-    // Fetch all active equipment that has an upcoming or overdue inspection
+    // ── Fetch all active equipment with inspection info ───────
     const { rows: items } = await query(`
       SELECT
         e.id, e.name, e.asset_tag, e.serial_number, e.location, e.rig_number,
@@ -30,90 +30,80 @@ async function runAlertCheck() {
         AND i.next_due_date IS NOT NULL
     `);
 
-    console.log(`[Scheduler] Found ${items.length} active equipment item(s) with inspection records`);
+    console.log(`[Scheduler] Found ${items.length} active equipment items`);
 
-    let sent = 0, skipped = 0, failed = 0;
+    // ── Categorise each item ──────────────────────────────────
+    const overdueItems  = [];
+    const upcomingItems = []; // {item, daysUntilDue}
 
     for (const item of items) {
-      const days = parseInt(item.days_until_due);
+      const days     = parseInt(item.days_until_due);
+      const leadDays = (item.alert_lead_days || []).map(Number);
 
       if (days < 0) {
-        // Overdue
-        const result = await handleOverdue(item, Math.abs(days));
-        if (result === 'sent')    sent++;
-        if (result === 'skipped') skipped++;
-        if (result === 'failed')  failed++;
+        overdueItems.push({ item, daysOverdue: Math.abs(days) });
+      } else if (leadDays.includes(days)) {
+        upcomingItems.push({ item, daysUntilDue: days });
       } else {
-        // Convert to integers — pg may return array elements as strings
-        const leadDays = (item.alert_lead_days || []).map(Number);
-        if (leadDays.includes(days)) {
-          // Today exactly matches a configured alert day
-          console.log(`[Scheduler] "${item.name}" matches alert day ${days} (lead days: ${leadDays.join(',')})`);
-          const results = await handleUpcoming(item, days);
-          sent    += results.sent;
-          skipped += results.skipped;
-          failed  += results.failed;
-        } else {
-          console.log(`[Scheduler] "${item.name}" — ${days}d until due, no match in [${leadDays.join(',')}]`);
-        }
+        console.log(`[Scheduler] "${item.name}" — ${days}d until due, no match in [${leadDays.join(',')}]`);
       }
     }
 
-    console.log(`[Scheduler] ✔ Done — sent:${sent} skipped:${skipped} failed:${failed}\n`);
+    console.log(`[Scheduler] Upcoming: ${upcomingItems.length}, Overdue: ${overdueItems.length}`);
+
+    // ── Build recipient → items map ───────────────────────────
+    // Each recipient gets ONE email with ALL their relevant items
+    const upcomingByRecipient = {}; // email → [{item, daysUntilDue}]
+    const overdueByRecipient  = {}; // email → [{item, daysOverdue}]
+
+    // Populate upcoming map
+    for (const entry of upcomingItems) {
+      const recipients = await getRecipients(entry.item.category_id, entry.item.rig_number);
+      for (const email of recipients) {
+        if (!upcomingByRecipient[email]) upcomingByRecipient[email] = [];
+        // Check not already sent today for this item at this day count
+        const alreadySent = await sentToday(entry.item.id, email, entry.daysUntilDue, 'expiry');
+        if (!alreadySent) upcomingByRecipient[email].push(entry);
+      }
+    }
+
+    // Populate overdue map
+    for (const entry of overdueItems) {
+      const recipients = await getRecipients(entry.item.category_id, entry.item.rig_number);
+      for (const email of recipients) {
+        if (!overdueByRecipient[email]) overdueByRecipient[email] = [];
+        const alreadySent = await sentTodayOverdue(entry.item.id, email);
+        if (!alreadySent) overdueByRecipient[email].push(entry);
+      }
+    }
+
+    // ── Send one grouped email per recipient ──────────────────
+    let sent = 0, skipped = 0, failed = 0;
+
+    // Upcoming emails
+    for (const [email, entries] of Object.entries(upcomingByRecipient)) {
+      if (entries.length === 0) { skipped++; continue; }
+      const { subject, html } = buildGroupedExpiryEmail({ entries });
+      const ok = await trySendGrouped(email, subject, html, entries, 'expiry');
+      ok ? sent++ : failed++;
+    }
+
+    // Overdue emails
+    for (const [email, entries] of Object.entries(overdueByRecipient)) {
+      if (entries.length === 0) { skipped++; continue; }
+      const { subject, html } = buildGroupedOverdueEmail({ entries });
+      const ok = await trySendGrouped(email, subject, html, entries, 'overdue');
+      ok ? sent++ : failed++;
+    }
+
+    console.log(`[Scheduler] ✔ Done — emails sent:${sent} failed:${failed} skipped:${skipped}\n`);
   } catch (err) {
     console.error('[Scheduler] ✗ Fatal error:', err);
   }
 }
 
 // ─────────────────────────────────────────────────────────────
-async function handleUpcoming(item, daysUntilDue) {
-  const recipients = await getRecipients(item.id, item.category_id, item.rig_number);
-  let sent = 0, skipped = 0, failed = 0;
-
-  for (const email of recipients) {
-    const already = await sentToday(item.id, email, daysUntilDue, 'expiry');
-    if (already) { skipped++; continue; }
-
-    const { subject, html } = buildExpiryEmail({
-      equipment:     item,
-      daysUntilDue,
-      nextDueDate:   item.next_due_date,
-      lastInspection: item.last_inspection_date,
-      category:      item.category,
-    });
-
-    const ok = await trySend(item.id, email, subject, html, daysUntilDue, 'expiry');
-    ok ? sent++ : failed++;
-  }
-
-  return { sent, skipped, failed };
-}
-
-async function handleOverdue(item, daysOverdue) {
-  const recipients = await getRecipients(item.id, item.category_id, item.rig_number);
-
-  for (const email of recipients) {
-    const already = await sentToday(item.id, email, -daysOverdue, 'overdue');
-    if (already) return 'skipped';
-
-    const { subject, html } = buildOverdueEmail({
-      equipment:      item,
-      daysOverdue,
-      lastInspection: item.last_inspection_date,
-      category:       item.category,
-    });
-
-    return await trySend(item.id, email, subject, html, -daysOverdue, 'overdue')
-      ? 'sent' : 'failed';
-  }
-  return 'skipped';
-}
-
-// ─────────────────────────────────────────────────────────────
-async function getRecipients(equipmentId, categoryId, rigNumber) {
-  // Recipients matched if:
-  //   a) category matches AND (rig_number is NULL = all rigs OR rig_number matches this equipment's rig)
-  //   b) OR they are global recipients
+async function getRecipients(categoryId, rigNumber) {
   const { rows } = await query(`
     SELECT DISTINCT email FROM (
       SELECT ar.email
@@ -141,20 +131,41 @@ async function sentToday(equipmentId, email, daysBefore, alertType) {
   return rows.length > 0;
 }
 
-async function trySend(equipmentId, email, subject, html, daysBefore, alertType) {
+async function sentTodayOverdue(equipmentId, email) {
+  const { rows } = await query(`
+    SELECT id FROM alert_log
+    WHERE equipment_id    = $1
+      AND recipient_email = $2
+      AND alert_type      = 'overdue'
+      AND sent_at::date   = CURRENT_DATE
+      AND status          = 'sent'
+  `, [equipmentId, email]);
+  return rows.length > 0;
+}
+
+async function trySendGrouped(email, subject, html, entries, alertType) {
   try {
     await sendEmail({ to: email, subject, html });
-    await query(`
-      INSERT INTO alert_log (equipment_id, recipient_email, days_before_due, alert_type, status)
-      VALUES ($1,$2,$3,$4,'sent')
-    `, [equipmentId, email, daysBefore, alertType]);
-    console.log(`  ✉  ${alertType.toUpperCase()} → ${email} (${daysBefore}d)`);
+
+    // Log one entry per equipment item in the grouped email
+    for (const entry of entries) {
+      const days = alertType === 'overdue' ? -entry.daysOverdue : entry.daysUntilDue;
+      await query(`
+        INSERT INTO alert_log (equipment_id, recipient_email, days_before_due, alert_type, status)
+        VALUES ($1,$2,$3,$4,'sent')
+      `, [entry.item.id, email, days, alertType]);
+    }
+
+    console.log(`  ✉  ${alertType.toUpperCase()} grouped email → ${email} (${entries.length} items)`);
     return true;
   } catch (err) {
-    await query(`
-      INSERT INTO alert_log (equipment_id, recipient_email, days_before_due, alert_type, status, error_message)
-      VALUES ($1,$2,$3,$4,'failed',$5)
-    `, [equipmentId, email, daysBefore, alertType, err.message]);
+    for (const entry of entries) {
+      const days = alertType === 'overdue' ? -entry.daysOverdue : entry.daysUntilDue;
+      await query(`
+        INSERT INTO alert_log (equipment_id, recipient_email, days_before_due, alert_type, status, error_message)
+        VALUES ($1,$2,$3,$4,'failed',$5)
+      `, [entry.item.id, email, days, alertType, err.message]);
+    }
     console.error(`  ✗  Failed → ${email}: ${err.message}`);
     return false;
   }
@@ -162,7 +173,7 @@ async function trySend(equipmentId, email, subject, html, daysBefore, alertType)
 
 // ─────────────────────────────────────────────────────────────
 function startScheduler() {
-  const expr = process.env.ALERT_CRON || '0 7 * * *';
+  const expr = process.env.ALERT_CRON || '0 4 * * *';
   console.log(`[Scheduler] Cron set to "${expr}" (UTC)`);
   cron.schedule(expr, runAlertCheck);
 }

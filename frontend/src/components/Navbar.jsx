@@ -3,11 +3,11 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const NAV_LINKS = [
-  { to: '/',            label: 'Dashboard',         icon: '📊', exact: true },
-  { to: '/equipment',   label: 'Equipment & Tools',  icon: '⚙️', exact: false },
-  { to: '/categories',  label: 'Categories & Alerts',icon: '🏷️', exact: false },
-  { to: '/alerts',      label: 'Alert Logs',         icon: '🔔', exact: false },
-  { to: '/import',      label: 'Import',             icon: '📥', exact: false },
+  { to: '/',            label: 'Dashboard',          icon: '📊', exact: true,  adminOnly: false },
+  { to: '/equipment',   label: 'Equipment & Tools',   icon: '⚙️', exact: false, adminOnly: false },
+  { to: '/categories',  label: 'Categories & Alerts', icon: '🏷️', exact: false, adminOnly: true  },
+  { to: '/alerts',      label: 'Alert Logs',          icon: '🔔', exact: false, adminOnly: true  },
+  { to: '/import',      label: 'Import',              icon: '📥', exact: false, adminOnly: false },
 ];
 
 export default function Navbar() {
@@ -49,7 +49,7 @@ export default function Navbar() {
 
         {/* Nav links */}
         <div style={{ display: 'flex', flex: 1, gap: 0, overflowX: 'auto' }}>
-          {NAV_LINKS.map(({ to, label, icon, exact }) => (
+          {NAV_LINKS.filter(l => !l.adminOnly || user?.role === 'admin').map(({ to, label, icon, exact }) => (
             <NavLink key={to} to={to} end={exact} style={({ isActive }) => ({
               color: isActive ? '#fff' : '#94a3b8',
               fontWeight: 600, fontSize: 13,

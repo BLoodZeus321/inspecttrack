@@ -30,7 +30,7 @@ function InspectionForm({ equipmentId, onSave, onClose }) {
   return (
     <form onSubmit={submit}>
       <AlertBanner type="error" message={error} onClose={() => setError('')} />
-      <Input label="Inspector Name *" value={form.inspected_by} onChange={set('inspected_by')} required placeholder="Full name of inspector" />
+      <Input label="Representative Name *" value={form.inspected_by} onChange={set('inspected_by')} required placeholder="Full name of representative" />
       <Input label="Inspection Date *" type="date" value={form.inspection_date} onChange={set('inspection_date')} required />
       <Select label="Result *" value={form.result} onChange={set('result')}>
         <option value="pass">✓ Pass — Equipment is in good condition</option>
@@ -66,7 +66,7 @@ export default function EquipmentDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canEdit  = ['admin','inspector'].includes(user?.role);
+  const canEdit  = ['admin','representative'].includes(user?.role);
 
   const [data, setData]         = useState(null);
   const [loading, setLoading]   = useState(true);
@@ -151,7 +151,7 @@ export default function EquipmentDetailPage() {
           {eq.last_inspection_date && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 12, color: '#64748b' }}>Last inspected</div>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>{fmtDate(eq.last_inspection_date)} by {eq.last_inspector}</div>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>{fmtDate(eq.last_inspection_date)} by {eq.last_representative}</div>
             </div>
           )}
         </div>
@@ -217,7 +217,7 @@ export default function EquipmentDetailPage() {
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead><tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                {['Date','Inspector','Result','Next Due','Notes'].map(h => (
+                {['Date','Representative','Result','Next Due','Notes'].map(h => (
                   <th key={h} style={{ padding: '11px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>{h}</th>
                 ))}
               </tr></thead>

@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
     name:     Joi.string().min(2).max(100).required(),
     email:    Joi.string().email().required(),
     password: Joi.string().min(8).required(),
-    role:     Joi.string().valid('admin','inspector','viewer').default('viewer'),
+    role:     Joi.string().valid('admin','representative','viewer').default('viewer'),
   });
   const { error, value } = schema.validate(req.body);
   if (error) return res.status(400).json({ error: error.details[0].message });

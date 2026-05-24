@@ -47,3 +47,10 @@ ALTER TABLE alert_recipients ADD COLUMN IF NOT EXISTS rig_number VARCHAR(50);
 
 -- Index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_alert_recipients_rig ON alert_recipients(rig_number);
+
+-- ── Migration: Rename role inspector → representative ─────────
+-- Run in Supabase SQL Editor for EXISTING installs
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+UPDATE users SET role = 'representative' WHERE role = 'inspector';
+ALTER TABLE users ADD CONSTRAINT users_role_check
+  CHECK (role IN ('admin','representative','viewer'));

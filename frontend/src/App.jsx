@@ -55,10 +55,10 @@ function AppShell() {
         <Protected><Layout><EquipmentDetailPage /></Layout></Protected>
       } />
       <Route path="/categories" element={
-        <Protected><Layout><CategoriesPage /></Layout></Protected>
+        <Protected adminOnly><Layout><CategoriesPage /></Layout></Protected>
       } />
       <Route path="/alerts" element={
-        <Protected><Layout><AlertLogsPage /></Layout></Protected>
+        <Protected adminOnly><Layout><AlertLogsPage /></Layout></Protected>
       } />
       <Route path="/profile" element={
         <Protected><Layout><ProfilePage /></Layout></Protected>

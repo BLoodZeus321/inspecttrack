@@ -92,7 +92,7 @@ export default function EquipmentPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate  = useNavigate();
   const { user }  = useAuth();
-  const canEdit   = ['admin','inspector'].includes(user?.role);
+  const canEdit   = ['admin','representative'].includes(user?.role);
 
   const search      = searchParams.get('search') || '';
   const alertStatus = searchParams.get('alert_status') || '';
@@ -225,7 +225,7 @@ export default function EquipmentPage() {
                         {eq.last_inspection_date ? (
                           <div>
                             <div>{fmtDate(eq.last_inspection_date)}</div>
-                            {eq.last_inspector && <div style={{ fontSize: 11, color: '#94a3b8' }}>by {eq.last_inspector}</div>}
+                            {eq.last_representative && <div style={{ fontSize: 11, color: '#94a3b8' }}>by {eq.last_representative}</div>}
                           </div>
                         ) : <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Never</span>}
                       </td>

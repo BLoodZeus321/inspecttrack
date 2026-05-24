@@ -21,11 +21,11 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-function requireInspector(req, res, next) {
-  if (!['admin', 'inspector'].includes(req.user?.role)) {
-    return res.status(403).json({ error: 'Inspector access required' });
+function requireRepresentative(req, res, next) {
+  if (!['admin', 'representative'].includes(req.user?.role)) {
+    return res.status(403).json({ error: 'Representative access required' });
   }
   next();
 }
 
-module.exports = { authenticate, requireAdmin, requireInspector };
+module.exports = { authenticate, requireAdmin, requireRepresentative };

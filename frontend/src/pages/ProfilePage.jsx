@@ -32,7 +32,7 @@ export default function ProfilePage() {
 
   const ROLE_DESC = {
     admin:    'Full access — manage users, categories, equipment, log inspections',
-    inspector:'Can add equipment and log inspections',
+    representative:'Can add equipment and log inspections',
     viewer:   'Read-only access to all data',
   };
 

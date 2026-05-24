@@ -234,10 +234,10 @@ export function UsersPage() {
 
   if (loading) return <Spinner />;
 
-  const ROLES = ['admin','inspector','viewer'];
+  const ROLES = ['admin','representative','viewer'];
   const ROLE_DESC = {
     admin:    'Full access — manage users, categories, equipment, log inspections',
-    inspector:'Can add equipment and log inspections',
+    representative:'Can add equipment and log inspections',
     viewer:   'Read-only access to all data',
   };
 
@@ -299,8 +299,8 @@ export function UsersPage() {
                   ) : (
                     <span style={{
                       fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-                      background: u.role === 'admin' ? '#fef2f2' : u.role === 'inspector' ? '#eff6ff' : '#f8fafc',
-                      color: u.role === 'admin' ? '#991b1b' : u.role === 'inspector' ? '#1e40af' : '#64748b',
+                      background: u.role === 'admin' ? '#fef2f2' : u.role === 'representative' ? '#eff6ff' : '#f8fafc',
+                      color: u.role === 'admin' ? '#991b1b' : u.role === 'representative' ? '#1e40af' : '#64748b',
                     }}>{u.role}</span>
                   )}
                 </td>

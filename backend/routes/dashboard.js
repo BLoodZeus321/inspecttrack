@@ -2,7 +2,7 @@ const router = require('express').Router();
 const { query } = require('../db/pool');
 const { authenticate } = require('../middleware/auth');
 const { runAlertCheck } = require('../services/alertScheduler');
-const { sendEmail } = require('../services/emailService');
+const { sendEmail, buildTestEmail } = require('../services/emailService');
 
 // GET /api/dashboard/stats
 router.get('/stats', authenticate, async (req, res) => {
