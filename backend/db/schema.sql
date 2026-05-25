@@ -120,6 +120,8 @@ SELECT
   (i.next_due_date - CURRENT_DATE) AS days_until_due,
   CASE
     WHEN i.next_due_date IS NULL              THEN 'never_inspected'
+    WHEN i.result = 'fail'                    THEN 'failed'
+    WHEN i.result = 'conditional'             THEN 'conditional'
     WHEN CURRENT_DATE >  i.next_due_date      THEN 'overdue'
     WHEN CURRENT_DATE >= i.next_due_date -  7 THEN 'critical'
     WHEN CURRENT_DATE >= i.next_due_date - 30 THEN 'warning'

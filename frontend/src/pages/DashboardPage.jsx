@@ -67,33 +67,37 @@ export default function DashboardPage() {
       {msg && <AlertBanner type="success" message={msg} onClose={() => setMsg('')} />}
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14, marginBottom: 28 }}>
-        <StatCard label="Total Active" value={s.total}          accent="#1e293b" onClick={() => navigate('/equipment')} />
-        <StatCard label="Overdue"      value={s.overdue}        accent="#ef4444" sub="Immediate action needed"
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 14, marginBottom: 28 }}>
+        <StatCard label="Total Active"     value={s.total}          accent="#1e293b" onClick={() => navigate('/equipment')} />
+        <StatCard label="Overdue"          value={s.overdue}        accent="#ef4444" sub="Immediate action needed"
           onClick={() => navigate('/equipment?alert_status=overdue')} />
-        <StatCard label="Due This Week" value={s.critical}      accent="#f97316" sub="Within 7 days"
+        <StatCard label="Failed Inspection" value={s.failed}        accent="#dc2626" sub="Must be taken out of service"
+          onClick={() => navigate('/equipment?alert_status=failed')} />
+        <StatCard label="Conditional"      value={s.conditional}    accent="#f97316" sub="Minor issues, monitor closely"
+          onClick={() => navigate('/equipment?alert_status=conditional')} />
+        <StatCard label="Due This Week"    value={s.critical}       accent="#f97316" sub="Within 7 days"
           onClick={() => navigate('/equipment?alert_status=critical')} />
-        <StatCard label="Due This Month" value={s.warning}      accent="#eab308" sub="Within 30 days"
+        <StatCard label="Due This Month"   value={s.warning}        accent="#eab308" sub="Within 30 days"
           onClick={() => navigate('/equipment?alert_status=warning')} />
-        <StatCard label="All OK"        value={s.ok}            accent="#22c55e" />
-        <StatCard label="Never Inspected" value={s.never_inspected} accent="#8b5cf6"
+        <StatCard label="All OK"           value={s.ok}             accent="#22c55e" />
+        <StatCard label="Never Inspected"  value={s.never_inspected} accent="#8b5cf6"
           onClick={() => navigate('/equipment?alert_status=never_inspected')} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
 
-        {/* Overdue list */}
+        {/* Action Required list — overdue + failed + conditional */}
         <section>
           <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ background: '#fef2f2', color: '#991b1b', padding: '2px 10px', borderRadius: 6, fontSize: 13 }}>
-              🚨 Overdue ({data?.overdueList?.length || 0})
+              🚨 Action Required ({data?.overdueList?.length || 0})
             </span>
           </h2>
           <div style={{ background: '#fff', border: '1.5px solid #fecaca', borderRadius: 12, overflow: 'hidden' }}>
             {data?.overdueList?.length ? (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead><tr style={{ background: '#fef2f2' }}>
-                  {['Equipment','Category','Rig','Overdue by'].map(h => (
+                  {['Equipment','Category','Rig','Status','Details'].map(h => (
                     <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 600,
                       color: '#991b1b', borderBottom: '1px solid #fecaca', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
@@ -114,16 +118,19 @@ export default function DashboardPage() {
                           {eq.category || '—'}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 14px', color: '#64748b' }}>{eq.rig_number || eq.location || '—'}</td>
+                      <td style={{ padding: '10px 14px', color: '#64748b' }}>{eq.rig_number || '—'}</td>
+                      <td style={{ padding: '10px 14px' }}><Badge status={eq.alert_status} /></td>
                       <td style={{ padding: '10px 14px', fontWeight: 700, color: '#dc2626' }}>
-                        {Math.abs(parseInt(eq.days_until_due))}d
+                        {eq.alert_status === 'failed'      ? 'Failed — take out of service' :
+                         eq.alert_status === 'conditional' ? 'Conditional — monitor closely' :
+                         `${Math.abs(parseInt(eq.days_until_due))}d overdue`}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             ) : (
-              <Empty icon="✅" title="No overdue equipment" sub="All inspections are up to date!" />
+              <Empty icon="✅" title="No action required" sub="All inspections are up to date!" />
             )}
           </div>
         </section>
@@ -135,7 +142,7 @@ export default function DashboardPage() {
             {data?.byCategory?.length ? (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead><tr style={{ background: '#f8fafc' }}>
-                  {['Category','Total','OK','Warning','Critical','Overdue'].map(h => (
+                  {['Category','Total','OK','Warning','Critical','Failed','Conditional','Overdue'].map(h => (
                     <th key={h} style={{ padding: '9px 14px', textAlign: h === 'Category' ? 'left' : 'center',
                       fontWeight: 600, color: '#64748b', borderBottom: '1px solid #e2e8f0' }}>{h}</th>
                   ))}
@@ -145,8 +152,7 @@ export default function DashboardPage() {
                     <tr key={c.category} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '10px 14px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ width: 10, height: 10, borderRadius: '50%',
-                            background: c.category_color, flexShrink: 0 }} />
+                          <span style={{ width: 10, height: 10, borderRadius: '50%', background: c.category_color, flexShrink: 0 }} />
                           <span style={{ fontWeight: 600 }}>{c.category || 'Uncategorized'}</span>
                         </div>
                       </td>
@@ -154,7 +160,9 @@ export default function DashboardPage() {
                       <td style={{ padding: '10px 14px', textAlign: 'center', color: '#16a34a', fontWeight: 600 }}>{c.ok}</td>
                       <td style={{ padding: '10px 14px', textAlign: 'center', color: '#d97706', fontWeight: 600 }}>{c.warning}</td>
                       <td style={{ padding: '10px 14px', textAlign: 'center', color: '#ea580c', fontWeight: 600 }}>{c.critical}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'center', color: '#dc2626', fontWeight: 700 }}>{c.overdue}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'center', color: '#dc2626', fontWeight: 700 }}>{c.failed}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'center', color: '#ea580c', fontWeight: 600 }}>{c.conditional}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'center', color: '#991b1b', fontWeight: 700 }}>{c.overdue}</td>
                     </tr>
                   ))}
                 </tbody>

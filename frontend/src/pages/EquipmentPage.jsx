@@ -127,11 +127,13 @@ export default function EquipmentPage() {
   };
 
   const STATUS_OPTS = [
-    { value: '', label: 'All Statuses' },
-    { value: 'overdue', label: '🚨 Overdue' },
-    { value: 'critical', label: '🔴 Due This Week' },
-    { value: 'warning', label: '🟡 Due This Month' },
-    { value: 'ok', label: '✅ OK' },
+    { value: '',              label: 'All Statuses' },
+    { value: 'overdue',       label: '🚨 Overdue' },
+    { value: 'failed',        label: '✗ Inspection Failed' },
+    { value: 'conditional',   label: '⚠ Conditional' },
+    { value: 'critical',      label: '🔴 Due This Week' },
+    { value: 'warning',       label: '🟡 Due This Month' },
+    { value: 'ok',            label: '✅ OK' },
     { value: 'never_inspected', label: '🔵 Never Inspected' },
   ];
 

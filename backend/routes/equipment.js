@@ -41,11 +41,13 @@ router.get('/', authenticate, async (req, res) => {
       ${where}
       ORDER BY
         CASE es.alert_status
-          WHEN 'overdue'         THEN 1
-          WHEN 'critical'        THEN 2
-          WHEN 'warning'         THEN 3
-          WHEN 'never_inspected' THEN 4
-          ELSE 5
+          WHEN 'failed'          THEN 1
+          WHEN 'overdue'         THEN 2
+          WHEN 'conditional'     THEN 3
+          WHEN 'critical'        THEN 4
+          WHEN 'warning'         THEN 5
+          WHEN 'never_inspected' THEN 6
+          ELSE 7
         END, es.next_due_date ASC NULLS LAST
     `, params);
     res.json({ data: rows, total: rows.length });

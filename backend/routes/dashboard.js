@@ -16,6 +16,8 @@ router.get('/stats', authenticate, async (req, res) => {
           COUNT(*) FILTER (WHERE alert_status='critical')::int       AS critical,
           COUNT(*) FILTER (WHERE alert_status='warning')::int        AS warning,
           COUNT(*) FILTER (WHERE alert_status='ok')::int             AS ok,
+          COUNT(*) FILTER (WHERE alert_status='failed')::int         AS failed,
+          COUNT(*) FILTER (WHERE alert_status='conditional')::int    AS conditional,
           COUNT(*) FILTER (WHERE alert_status='never_inspected')::int AS never_inspected
         FROM equipment_status WHERE status='active'
       `),
@@ -28,7 +30,9 @@ router.get('/stats', authenticate, async (req, res) => {
           COUNT(*) FILTER (WHERE es.alert_status='overdue')::int   AS overdue,
           COUNT(*) FILTER (WHERE es.alert_status='critical')::int  AS critical,
           COUNT(*) FILTER (WHERE es.alert_status='warning')::int   AS warning,
-          COUNT(*) FILTER (WHERE es.alert_status='ok')::int        AS ok
+          COUNT(*) FILTER (WHERE es.alert_status='ok')::int        AS ok,
+          COUNT(*) FILTER (WHERE es.alert_status='failed')::int    AS failed,
+          COUNT(*) FILTER (WHERE es.alert_status='conditional')::int AS conditional
         FROM equipment_status es
         WHERE es.status='active'
         GROUP BY es.category, es.category_color
@@ -52,13 +56,15 @@ router.get('/stats', authenticate, async (req, res) => {
         ORDER BY al.sent_at DESC LIMIT 20
       `),
 
-      // Full overdue list
+      // Full overdue + failed + conditional list
       query(`
         SELECT id, name, asset_tag, location, rig_number, category, category_color,
-               next_due_date, days_until_due, last_inspection_date
+               next_due_date, days_until_due, last_inspection_date, alert_status, last_result
         FROM equipment_status
-        WHERE alert_status='overdue' AND status='active'
-        ORDER BY days_until_due ASC
+        WHERE alert_status IN ('overdue','failed','conditional') AND status='active'
+        ORDER BY
+          CASE alert_status WHEN 'failed' THEN 1 WHEN 'overdue' THEN 2 ELSE 3 END,
+          days_until_due ASC
       `),
     ]);
 

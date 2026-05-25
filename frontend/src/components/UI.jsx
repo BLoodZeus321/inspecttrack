@@ -5,6 +5,8 @@ export const colors = {
   warning:        { bg: '#fefce8', text: '#854d0e', dot: '#eab308', border: '#fef08a' },
   ok:             { bg: '#f0fdf4', text: '#166534', dot: '#22c55e', border: '#bbf7d0' },
   never_inspected:{ bg: '#f5f3ff', text: '#5b21b6', dot: '#8b5cf6', border: '#ddd6fe' },
+  failed:         { bg: '#fef2f2', text: '#991b1b', dot: '#dc2626', border: '#fecaca' },
+  conditional:    { bg: '#fff7ed', text: '#9a3412', dot: '#f97316', border: '#fed7aa' },
 };
 
 // ── Badge ─────────────────────────────────────────────────────
@@ -14,6 +16,8 @@ const STATUS_LABELS = {
   warning:        'Upcoming',
   ok:             'OK',
   never_inspected:'Never Inspected',
+  failed:         'Inspection Failed',
+  conditional:    'Conditional',
 };
 
 export function Badge({ status, size = 'sm' }) {
