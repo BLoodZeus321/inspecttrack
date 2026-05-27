@@ -9,10 +9,11 @@ import CategoriesPage from './pages/CategoriesPage';
 import { AlertLogsPage, UsersPage } from './pages/AlertLogsPage';
 import ProfilePage from './pages/ProfilePage';
 import ImportPage from './pages/ImportPage';
+import CertificatesPage from './pages/CertificatesPage';
 import { Spinner } from './components/UI';
 
 // ── Protected route wrapper ───────────────────────────────────
-function Protected({ children, adminOnly = false }) {
+function Protected({ children, adminOnly = false, representativeOnly = false }) {
   const { user, loading } = useAuth();
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
@@ -21,6 +22,7 @@ function Protected({ children, adminOnly = false }) {
   );
   if (!user) return <Navigate to="/login" replace />;
   if (adminOnly && user.role !== 'admin') return <Navigate to="/" replace />;
+  if (representativeOnly && user.role === 'viewer') return <Navigate to="/" replace />;
   return children;
 }
 
@@ -64,7 +66,10 @@ function AppShell() {
         <Protected><Layout><ProfilePage /></Layout></Protected>
       } />
       <Route path="/import" element={
-        <Protected><Layout><ImportPage /></Layout></Protected>
+        <Protected adminOnly={false} representativeOnly={true}><Layout><ImportPage /></Layout></Protected>
+      } />
+      <Route path="/certificates" element={
+        <Protected><Layout><CertificatesPage /></Layout></Protected>
       } />
 
       {/* Admin only */}

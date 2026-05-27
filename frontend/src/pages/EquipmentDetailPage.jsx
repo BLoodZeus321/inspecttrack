@@ -72,7 +72,12 @@ export default function EquipmentDetailPage() {
   const [loading, setLoading]   = useState(true);
   const [showInspForm, setShowInspForm] = useState(false);
   const [error, setError]       = useState('');
-  const [tab, setTab]           = useState('info'); // info | history | alerts
+  const [tab, setTab]           = useState('info'); // info | history | alerts | certs
+  const [certs, setCerts]       = useState([]);
+
+  const loadCerts = useCallback(() => {
+    api.get(`/certificates/equipment/${id}`).then(r => setCerts(r.data)).catch(console.error);
+  }, [id]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -82,7 +87,7 @@ export default function EquipmentDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); loadCerts(); }, [load, loadCerts]);
 
   if (loading) return <Spinner />;
   if (!data)   return <div style={{ padding: 40, color: '#94a3b8' }}>Equipment not found.</div>;
@@ -159,7 +164,7 @@ export default function EquipmentDetailPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0', marginBottom: 24 }}>
-        {[['info','📋 Details'], ['history','🔍 Inspection History'], ['alerts','📧 Alert Log']].map(([k, label]) => (
+        {[['info','📋 Details'], ['history','🔍 Inspection History'], ['alerts','📧 Alert Log'], ['certs','📄 Certificates']].map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} style={{
             padding: '10px 20px', border: 'none', background: 'none', cursor: 'pointer',
             fontWeight: 600, fontSize: 13, fontFamily: 'inherit',
@@ -282,6 +287,73 @@ export default function EquipmentDetailPage() {
               </tbody>
             </table>
           )}
+        </div>
+      )}
+
+      {/* ── Certificates Tab ── */}
+      {tab === 'certs' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>
+              Certificates linked to this equipment. One certificate can cover multiple items.
+            </p>
+            <Button variant="secondary" size="sm"
+              onClick={() => window.location.href = '/certificates'}>
+              Manage All Certificates →
+            </Button>
+          </div>
+          <div style={{ background: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
+            {certs.length === 0 ? (
+              <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
+                <div style={{ fontWeight: 600, color: '#64748b', marginBottom: 8 }}>No certificates linked</div>
+                <Button variant="secondary" size="sm" onClick={() => window.location.href = '/certificates'}>
+                  + Upload Certificate
+                </Button>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead><tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  {['Title','Cert Number','Issued By','Issue Date','Expiry','File'].map(h => (
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {certs.map(cert => {
+                    const isExpired = cert.expiry_date && new Date(cert.expiry_date) < new Date();
+                    const expiringSoon = cert.expiry_date && !isExpired &&
+                      (new Date(cert.expiry_date) - new Date()) < 30 * 24 * 60 * 60 * 1000;
+                    return (
+                      <tr key={cert.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 600 }}>{cert.title}</td>
+                        <td style={{ padding: '12px 16px', color: '#64748b', fontFamily: 'monospace', fontSize: 12 }}>
+                          {cert.cert_number || '—'}
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#64748b' }}>{cert.issued_by || '—'}</td>
+                        <td style={{ padding: '12px 16px', color: '#64748b' }}>{fmtDate(cert.issued_date)}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{
+                            fontWeight: 600,
+                            color: isExpired ? '#dc2626' : expiringSoon ? '#ea580c' : '#16a34a',
+                          }}>
+                            {cert.expiry_date ? fmtDate(cert.expiry_date) : '—'}
+                            {isExpired && ' ⚠'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {cert.file_url ? (
+                            <a href={cert.file_url} target="_blank" rel="noopener noreferrer">
+                              <Button variant="secondary" size="sm">📄 View</Button>
+                            </a>
+                          ) : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
 

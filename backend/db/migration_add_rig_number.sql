@@ -90,3 +90,66 @@ LEFT JOIN LATERAL (
   FROM   inspections WHERE equipment_id = e.id
   ORDER  BY inspection_date DESC LIMIT 1
 ) i ON TRUE;
+
+-- ── Migration: Add department to categories ───────────────────
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS department VARCHAR(100);
+
+-- Update existing categories with default departments
+UPDATE categories SET department = 'HSE'        WHERE name IN ('Fire Extinguisher','PPE','Pressure Vessel');
+UPDATE categories SET department = 'Lifting'    WHERE name IN ('Lifting Equipment');
+UPDATE categories SET department = 'Operations' WHERE name IN ('Electrical Tools','Hand Tools','Vehicle / Forklift');
+
+-- ── Migration: Certificate system ────────────────────────────
+-- Certificates can be linked to multiple equipment items
+
+CREATE TABLE IF NOT EXISTS certificates (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title         VARCHAR(200) NOT NULL,
+  cert_number   VARCHAR(100),
+  issued_by     VARCHAR(200),
+  issued_date   DATE,
+  expiry_date   DATE,
+  file_url      TEXT,          -- Supabase Storage public URL
+  file_name     VARCHAR(300),
+  notes         TEXT,
+  created_by    UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS equipment_certificates (
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  certificate_id UUID NOT NULL REFERENCES certificates(id) ON DELETE CASCADE,
+  equipment_id   UUID NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+  created_at     TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(certificate_id, equipment_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_eq_certs_cert ON equipment_certificates(certificate_id);
+CREATE INDEX IF NOT EXISTS idx_eq_certs_equip ON equipment_certificates(equipment_id);
+
+-- ── Supabase Storage: Create certificates bucket ──────────────
+-- Run this in Supabase → SQL Editor
+-- This creates a public bucket for certificate file storage
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('certificates', 'certificates', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow authenticated users to upload
+CREATE POLICY IF NOT EXISTS "Authenticated users can upload certificates"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'certificates');
+
+-- Allow everyone to read/view certificate files
+CREATE POLICY IF NOT EXISTS "Public can view certificates"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'certificates');
+
+-- Allow authenticated users to delete their own uploads
+CREATE POLICY IF NOT EXISTS "Authenticated users can delete certificates"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'certificates');

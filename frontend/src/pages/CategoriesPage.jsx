@@ -7,9 +7,10 @@ import { useAuth } from '../context/AuthContext';
 function CategoryForm({ initial = {}, onSave, onClose }) {
   const [form, setForm] = useState({
     name: '', description: '', inspection_interval_days: 365,
-    alert_lead_days: '30,14,7', color: '#3B82F6', ...initial,
+    alert_lead_days: '30,14,7', color: '#3B82F6', department: '', ...initial,
     alert_lead_days: Array.isArray(initial.alert_lead_days)
       ? initial.alert_lead_days.join(',') : (initial.alert_lead_days || '30,14,7'),
+    department: initial.department || '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
@@ -22,6 +23,7 @@ function CategoryForm({ initial = {}, onSave, onClose }) {
         ...form,
         inspection_interval_days: parseInt(form.inspection_interval_days),
         alert_lead_days: form.alert_lead_days.split(',').map(n => parseInt(n.trim())).filter(n => n > 0),
+        department: form.department || null,
       };
       if (initial.id) await api.put(`/categories/${initial.id}`, payload);
       else await api.post('/categories', payload);
@@ -63,6 +65,20 @@ function CategoryForm({ initial = {}, onSave, onClose }) {
             Alert at: {form.alert_lead_days} days before.
           </div>
         </div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 5 }}>
+          Responsible Department
+        </label>
+        <select value={form.department || ''} onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
+          style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #d1d5db', borderRadius: 8,
+            fontSize: 14, background: '#fff', fontFamily: 'inherit' }}>
+          <option value="">— Select Department —</option>
+          {['HSE','Operations','Lifting','Mechanical','Electrical','Marine','Logistics','Administration'].map(d => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
       </div>
 
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
@@ -284,6 +300,7 @@ export default function CategoriesPage() {
                 <div style={{ fontSize: 12, color: '#64748b', display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <span>🔄 Every {c.inspection_interval_days} days</span>
                   <span>🔔 Alert at: {c.alert_lead_days?.join(', ')} days before</span>
+                  {c.department && <span>🏢 {c.department}</span>}
                 </div>
                 {isAdmin && selected?.id === c.id && (
                   <div style={{ display: 'flex', gap: 6, marginTop: 10 }} onClick={e => e.stopPropagation()}>

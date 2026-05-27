@@ -23,16 +23,20 @@ app.use(helmet());
 // Open CORS — allows all origins
 // This is safe for an internal tool behind login (JWT protects all data routes)
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: '5mb' }));
+app.use((req, res, next) => {
+  if (req.headers['content-type']?.includes('multipart/form-data')) return next();
+  express.json({ limit: '5mb' })(req, res, next);
+});
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 500 }));
 
 // ── Routes ────────────────────────────────────────────────────
-app.use('/api/auth',        require('./routes/auth'));
-app.use('/api/equipment',   require('./routes/equipment'));
-app.use('/api/inspections', require('./routes/inspections'));
-app.use('/api/categories',  require('./routes/categories'));
-app.use('/api/dashboard',   require('./routes/dashboard'));
-app.use('/api/import',      require('./routes/import'));
+app.use('/api/auth',         require('./routes/auth'));
+app.use('/api/equipment',    require('./routes/equipment'));
+app.use('/api/inspections',  require('./routes/inspections'));
+app.use('/api/categories',   require('./routes/categories'));
+app.use('/api/dashboard',    require('./routes/dashboard'));
+app.use('/api/import',       require('./routes/import'));
+app.use('/api/certificates', require('./routes/certificates'));
 
 // ── Health check ──────────────────────────────────────────────
 app.get('/health', async (req, res) => {

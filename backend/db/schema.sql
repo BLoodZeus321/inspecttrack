@@ -26,6 +26,7 @@ CREATE TABLE categories (
   inspection_interval_days INTEGER NOT NULL DEFAULT 365,
   alert_lead_days          INTEGER[] NOT NULL DEFAULT '{30,14,7}',
   color                    VARCHAR(7) DEFAULT '#3B82F6',
+  department               VARCHAR(100),
   created_at               TIMESTAMPTZ DEFAULT NOW(),
   updated_at               TIMESTAMPTZ DEFAULT NOW()
 );
@@ -136,16 +137,43 @@ LEFT JOIN LATERAL (
 ) i ON TRUE;
 
 -- ── Seed default categories ───────────────────────────────────
-INSERT INTO categories (name, description, inspection_interval_days, alert_lead_days, color) VALUES
-  ('Fire Extinguisher',  'Fire suppression equipment',       365, '{60,30,7}',   '#EF4444'),
-  ('Lifting Equipment',  'Cranes, hoists, slings, shackles', 180, '{30,14,3}',   '#F97316'),
-  ('Pressure Vessel',    'Compressors, tanks, cylinders',     90, '{21,7,2}',    '#EAB308'),
-  ('PPE',                'Personal protective equipment',    365, '{30,14}',     '#22C55E'),
-  ('Electrical Tools',   'Portable electrical equipment',    365, '{30,7}',      '#3B82F6'),
-  ('Hand Tools',         'Manual hand tools',                730, '{60,30}',     '#8B5CF6'),
-  ('Vehicle / Forklift', 'Company vehicles and forklifts',   365, '{45,30,14}',  '#06B6D4');
+INSERT INTO categories (name, description, inspection_interval_days, alert_lead_days, color, department) VALUES
+  ('Fire Extinguisher',  'Fire suppression equipment',       365, '{60,30,7}',   '#EF4444', 'HSE'),
+  ('Lifting Equipment',  'Cranes, hoists, slings, shackles', 180, '{30,14,3}',   '#F97316', 'Lifting'),
+  ('Pressure Vessel',    'Compressors, tanks, cylinders',     90, '{21,7,2}',    '#EAB308', 'HSE'),
+  ('PPE',                'Personal protective equipment',    365, '{30,14}',     '#22C55E', 'HSE'),
+  ('Electrical Tools',   'Portable electrical equipment',    365, '{30,7}',      '#3B82F6', 'Operations'),
+  ('Hand Tools',         'Manual hand tools',                730, '{60,30}',     '#8B5CF6', 'Operations'),
+  ('Vehicle / Forklift', 'Company vehicles and forklifts',   365, '{45,30,14}',  '#06B6D4', 'Operations');
 
 -- ── Migration: Add rig_number column ─────────────────────────
 -- Run this in Supabase SQL Editor if upgrading an existing install
 -- (already included for fresh installs via the equipment table above)
 -- ALTER TABLE equipment ADD COLUMN IF NOT EXISTS rig_number VARCHAR(50);
+
+-- ── Certificates ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS certificates (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title         VARCHAR(200) NOT NULL,
+  cert_number   VARCHAR(100),
+  issued_by     VARCHAR(200),
+  issued_date   DATE,
+  expiry_date   DATE,
+  file_url      TEXT,
+  file_name     VARCHAR(300),
+  notes         TEXT,
+  created_by    UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS equipment_certificates (
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  certificate_id UUID NOT NULL REFERENCES certificates(id) ON DELETE CASCADE,
+  equipment_id   UUID NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+  created_at     TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(certificate_id, equipment_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_eq_certs_cert  ON equipment_certificates(certificate_id);
+CREATE INDEX IF NOT EXISTS idx_eq_certs_equip ON equipment_certificates(equipment_id);

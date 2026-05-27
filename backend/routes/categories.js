@@ -55,9 +55,9 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
 
   try {
     const { rows } = await query(`
-      INSERT INTO categories (name, description, inspection_interval_days, alert_lead_days, color)
-      VALUES ($1,$2,$3,$4,$5) RETURNING *
-    `, [value.name, value.description, value.inspection_interval_days, value.alert_lead_days, value.color]);
+      INSERT INTO categories (name, description, inspection_interval_days, alert_lead_days, color, department)
+      VALUES ($1,$2,$3,$4,$5,$6) RETURNING *
+    `, [value.name, value.description, value.inspection_interval_days, value.alert_lead_days, value.color, value.department || null]);
     res.status(201).json({ data: rows[0] });
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'Category name already exists' });

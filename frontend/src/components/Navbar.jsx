@@ -7,7 +7,8 @@ const NAV_LINKS = [
   { to: '/equipment',   label: 'Equipment & Tools',   icon: '⚙️', exact: false, adminOnly: false },
   { to: '/categories',  label: 'Categories & Alerts', icon: '🏷️', exact: false, adminOnly: true  },
   { to: '/alerts',      label: 'Alert Logs',          icon: '🔔', exact: false, adminOnly: true  },
-  { to: '/import',      label: 'Import',              icon: '📥', exact: false, adminOnly: false },
+  { to: '/import',      label: 'Import',              icon: '📥', exact: false, adminOnly: false, repOnly: true },
+  { to: '/certificates',label: 'Certificates',         icon: '📄', exact: false, adminOnly: false, repOnly: false },
 ];
 
 export default function Navbar() {
@@ -38,18 +39,17 @@ export default function Navbar() {
         display: 'flex', alignItems: 'center',
       }}>
         {/* Logo */}
-        <div style={{
-          color: '#fff', fontWeight: 800, fontSize: 16,
-          letterSpacing: '-.3px', marginRight: 36, padding: '17px 0',
-          flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <span style={{ fontSize: 20 }}>⚙️</span>
-          <span>InspectTrack</span>
+        <div style={{ marginRight: 28, padding: '12px 0', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src="/bhdc-logo.png" alt="BHDC" style={{ height: 32, width: 'auto', filter: 'brightness(0) invert(1)' }} />
+          <div style={{ borderLeft: '1px solid rgba(255,255,255,.2)', paddingLeft: 10 }}>
+            <div style={{ color: '#fff', fontWeight: 800, fontSize: 13, letterSpacing: '-.2px', lineHeight: 1.1 }}>InspectTrack</div>
+            <div style={{ color: '#64748b', fontSize: 10, fontWeight: 500, letterSpacing: '.3px' }}>BHDC Equipment Management</div>
+          </div>
         </div>
 
         {/* Nav links */}
         <div style={{ display: 'flex', flex: 1, gap: 0, overflowX: 'auto' }}>
-          {NAV_LINKS.filter(l => !l.adminOnly || user?.role === 'admin').map(({ to, label, icon, exact }) => (
+          {NAV_LINKS.filter(l => (!l.adminOnly || user?.role === 'admin') && (!l.repOnly || user?.role !== 'viewer')).map(({ to, label, icon, exact }) => (
             <NavLink key={to} to={to} end={exact} style={({ isActive }) => ({
               color: isActive ? '#fff' : '#94a3b8',
               fontWeight: 600, fontSize: 13,
