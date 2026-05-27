@@ -46,7 +46,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <img src="/bhdc-logo.png" alt="BHDC" style={{ height: 56, width: 'auto', marginBottom: 16, filter: 'brightness(0) invert(1)' }} />
+          <img src="/bhdc-logo.png" alt="BHDC" style={{ height: 56, width: 'auto', marginBottom: 16 }} />
           <h1 style={{ color: '#fff', fontSize: 26, fontWeight: 800, margin: '0 0 4px', letterSpacing: '-.3px' }}>
             BHDC InspectTrack
           </h1>

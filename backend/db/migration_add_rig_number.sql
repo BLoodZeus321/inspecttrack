@@ -137,19 +137,22 @@ VALUES ('certificates', 'certificates', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Allow authenticated users to upload
-CREATE POLICY IF NOT EXISTS "Authenticated users can upload certificates"
+DROP POLICY IF EXISTS "Authenticated users can upload certificates" ON storage.objects;
+CREATE POLICY "Authenticated users can upload certificates"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'certificates');
 
 -- Allow everyone to read/view certificate files
-CREATE POLICY IF NOT EXISTS "Public can view certificates"
+DROP POLICY IF EXISTS "Public can view certificates" ON storage.objects;
+CREATE POLICY "Public can view certificates"
 ON storage.objects FOR SELECT
 TO public
 USING (bucket_id = 'certificates');
 
 -- Allow authenticated users to delete their own uploads
-CREATE POLICY IF NOT EXISTS "Authenticated users can delete certificates"
+DROP POLICY IF EXISTS "Authenticated users can delete certificates" ON storage.objects;
+CREATE POLICY "Authenticated users can delete certificates"
 ON storage.objects FOR DELETE
 TO authenticated
 USING (bucket_id = 'certificates');
