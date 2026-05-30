@@ -85,7 +85,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
 // POST /api/equipment
 router.post('/', authenticate, requireRepresentative, async (req, res) => {
-  const { error, value } = schema.validate(req.body);
+  const { error, value } = schema.validate(req.body, { stripUnknown: true });
   if (error) return res.status(400).json({ error: error.details[0].message });
   try {
     const { rows } = await query(`
@@ -103,7 +103,7 @@ router.post('/', authenticate, requireRepresentative, async (req, res) => {
 
 // PUT /api/equipment/:id
 router.put('/:id', authenticate, requireRepresentative, async (req, res) => {
-  const { error, value } = schema.validate(req.body);
+  const { error, value } = schema.validate(req.body, { stripUnknown: true });
   if (error) return res.status(400).json({ error: error.details[0].message });
   try {
     const { rows } = await query(`
