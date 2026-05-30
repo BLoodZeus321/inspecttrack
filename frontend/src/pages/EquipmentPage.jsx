@@ -97,18 +97,19 @@ export default function EquipmentPage() {
   const search      = searchParams.get('search') || '';
   const alertStatus = searchParams.get('alert_status') || '';
   const category    = searchParams.get('category') || '';
+  const rig         = searchParams.get('rig') || '';
 
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      api.get(`/equipment?search=${search}&alert_status=${alertStatus}&category=${category}`),
+      api.get(`/equipment?search=${search}&alert_status=${alertStatus}&category=${category}&rig=${rig}`),
       api.get('/categories'),
     ]).then(([eq, cat]) => {
       setItems(eq.data);
       setCategories(cat.data);
     }).catch(err => setError(err.message))
       .finally(() => setLoading(false));
-  }, [search, alertStatus, category]);
+  }, [search, alertStatus, category, rig]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -171,14 +172,14 @@ export default function EquipmentPage() {
           <option value="">All Categories</option>
           {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
         </select>
-        <select value={searchParams.get('rig') || ''} onChange={e => setFilter('rig', e.target.value)}
+        <select value={rig} onChange={e => setFilter('rig', e.target.value)}
           style={{ padding: '8px 14px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13, background: '#fff', cursor: 'pointer' }}>
           <option value="">All Rigs</option>
           {['BHDC-67','BHDC-68','BHDC-117','BHDC-118','BHDC-YARD'].map(r => (
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
-        {(search || alertStatus || category || searchParams.get('rig')) && (
+        {(search || alertStatus || category || rig) && (
           <Button variant="ghost" size="sm" onClick={() => setSearchParams({})}>✕ Clear filters</Button>
         )}
       </div>
