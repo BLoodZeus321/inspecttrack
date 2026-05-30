@@ -79,7 +79,8 @@ export default function DashboardPage() {
           onClick={() => navigate('/equipment?alert_status=critical')} />
         <StatCard label="Due This Month"   value={s.warning}        accent="#eab308" sub="Within 30 days"
           onClick={() => navigate('/equipment?alert_status=warning')} />
-        <StatCard label="All OK"           value={s.ok}             accent="#22c55e" />
+        <StatCard label="All OK"           value={s.ok}             accent="#22c55e"
+          onClick={() => navigate('/equipment?alert_status=ok')} />
         <StatCard label="Never Inspected"  value={s.never_inspected} accent="#8b5cf6"
           onClick={() => navigate('/equipment?alert_status=never_inspected')} />
       </div>

@@ -40,10 +40,10 @@ export default function Navbar() {
       }}>
         {/* Logo */}
         <div style={{ marginRight: 28, padding: '12px 0', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/bhdc-logo.png" alt="BHDC" style={{ height: 36, width: 'auto' }} />
+          <img src="/bhdc-logo.png" alt="BHDC" style={{ height: 32, width: 'auto', filter: 'brightness(0) invert(1)' }} />
           <div style={{ borderLeft: '1px solid rgba(255,255,255,.2)', paddingLeft: 10 }}>
             <div style={{ color: '#fff', fontWeight: 800, fontSize: 13, letterSpacing: '-.2px', lineHeight: 1.1 }}>InspectTrack</div>
-            <div style={{ color: '#64748b', fontSize: 10, fontWeight: 500, letterSpacing: '.3px' }}>BHDC Equipment Management</div>
+            <div style={{ color: '#64748b', fontSize: 10, fontWeight: 500, letterSpacing: '.3px' }}>Bohai Drilling Engineering Company — Qatar</div>
           </div>
         </div>
 

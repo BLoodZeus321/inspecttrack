@@ -7,7 +7,7 @@ async function sendViaBrevoAPI({ to, subject, html }) {
   if (!apiKey) throw new Error('BREVO_API_KEY not set');
 
   const payload = JSON.stringify({
-    sender:      { name: process.env.SMTP_FROM_NAME || 'InspectTrack', email: process.env.SMTP_FROM },
+    sender:      { name: process.env.SMTP_FROM_NAME || 'BHDC InspectTrack', email: process.env.SMTP_FROM },
     to:          (Array.isArray(to) ? to : [to]).map(email => ({ email })),
     subject,
     htmlContent: html,
@@ -51,7 +51,7 @@ async function sendViaSMTP({ to, subject, html }) {
     socketTimeout:     20000,
   });
   await transporter.sendMail({
-    from: `"${process.env.SMTP_FROM_NAME || 'InspectTrack'}" <${process.env.SMTP_FROM}>`,
+    from: `"${process.env.SMTP_FROM_NAME || 'BHDC InspectTrack'}" <${process.env.SMTP_FROM}>`,
     to:   Array.isArray(to) ? to.join(', ') : to,
     subject, html,
   });
@@ -70,19 +70,51 @@ function fmtDate(d) {
 }
 
 function emailShell(headerBg, headerHtml, bodyHtml, footerColor) {
+  // BHDC logo as inline base64-friendly URL — use public Supabase or APP_URL hosted logo
+  const appUrl  = process.env.APP_URL || 'http://localhost:3000';
+  const logoUrl = `${appUrl}/bhdc-logo.png`;
+
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:32px 0;">
 <tr><td align="center">
-<table width="620" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12);">
-  <tr><td style="background:${headerBg};padding:24px 36px;">${headerHtml}</td></tr>
-  <tr><td style="padding:28px 36px;">${bodyHtml}</td></tr>
-  <tr><td style="background:#f8fafc;padding:16px 36px;border-top:1px solid #e2e8f0;">
-    <p style="margin:0;font-size:12px;color:${footerColor};text-align:center;">
-      InspectTrack &nbsp;·&nbsp; Equipment Inspection Management &nbsp;·&nbsp; Automated Alert
-    </p>
+<table width="620" cellpadding="0" cellspacing="0" style="border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12);">
+
+  <!-- Company header bar -->
+  <tr><td style="background:#0f172a;padding:14px 36px;">
+    <table width="100%"><tr>
+      <td style="vertical-align:middle;">
+        <img src="${logoUrl}" alt="BHDC" height="32" style="display:block;border:0;" />
+      </td>
+      <td align="right" style="vertical-align:middle;">
+        <div style="color:#fff;font-size:13px;font-weight:700;letter-spacing:-.2px;">BHDC InspectTrack</div>
+        <div style="color:#64748b;font-size:11px;">Bohai Drilling Engineering Company — Qatar</div>
+      </td>
+    </tr></table>
   </td></tr>
+
+  <!-- Alert header -->
+  <tr><td style="background:${headerBg};padding:24px 36px;">${headerHtml}</td></tr>
+
+  <!-- Body -->
+  <tr><td style="background:#fff;padding:28px 36px;">${bodyHtml}</td></tr>
+
+  <!-- Footer -->
+  <tr><td style="background:#f8fafc;padding:16px 36px;border-top:1px solid #e2e8f0;">
+    <table width="100%"><tr>
+      <td>
+        <p style="margin:0;font-size:11px;color:${footerColor};">
+          Bohai Drilling Engineering Company &nbsp;·&nbsp; Qatar Project<br>
+          This is an automated alert from BHDC InspectTrack — do not reply.
+        </p>
+      </td>
+      <td align="right">
+        <a href="${appUrl}" style="font-size:11px;color:#3b82f6;text-decoration:none;">Open Dashboard →</a>
+      </td>
+    </tr></table>
+  </td></tr>
+
 </table>
 </td></tr></table>
 </body></html>`;
@@ -146,7 +178,7 @@ function buildGroupedExpiryEmail({ entries }) {
 
   const header = `<table width="100%"><tr>
     <td>
-      <div style="color:rgba(255,255,255,.7);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">InspectTrack Alert</div>
+      <div style="color:rgba(255,255,255,.7);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">BHDC InspectTrack</div>
       <div style="color:#fff;font-size:20px;font-weight:800;">Inspection Due — ${count} Item${count !== 1 ? 's' : ''}</div>
     </td>
     <td align="right" valign="top">
@@ -175,7 +207,7 @@ function buildGroupedOverdueEmail({ entries }) {
 
   const header = `<table width="100%"><tr>
     <td>
-      <div style="color:rgba(255,255,255,.7);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">InspectTrack Alert</div>
+      <div style="color:rgba(255,255,255,.7);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">BHDC InspectTrack</div>
       <div style="color:#fff;font-size:20px;font-weight:800;">Overdue Inspections — ${count} Item${count !== 1 ? 's' : ''}</div>
     </td>
     <td align="right" valign="top">
@@ -201,11 +233,11 @@ function buildGroupedOverdueEmail({ entries }) {
 // ── Test email (single item) ───────────────────────────────────
 function buildTestEmail({ to, smtpFrom, method, time }) {
   return {
-    subject: '✅ InspectTrack — Email Test Successful',
+    subject: '✅ BHDC InspectTrack — Email Test Successful',
     html: `<div style="font-family:sans-serif;max-width:500px;margin:40px auto;padding:32px;
       background:#f0fdf4;border-radius:12px;border:2px solid #86efac;">
       <h2 style="color:#166534;margin:0 0 12px">✅ Email is working!</h2>
-      <p style="color:#374151;margin:0 0 8px">InspectTrack email is configured correctly.</p>
+      <p style="color:#374151;margin:0 0 8px">BHDC InspectTrack email is configured correctly.</p>
       <hr style="border:none;border-top:1px solid #bbf7d0;margin:16px 0">
       <p style="color:#6b7280;font-size:12px;margin:0">
         Sent to: <strong>${to}</strong><br>
