@@ -216,18 +216,16 @@ function buildGroupedOverdueEmail({ entries }) {
   </tr></table>`;
 
   const body = `
-    <p style="margin:0 0 16px;font-size:14px;color:#fecaca;">
+    <p style="margin:0 0 16px;font-size:14px;color:#374151;">
       The following <strong>${count} equipment item${count !== 1 ? 's' : ''}</strong> are overdue for inspection.
-      These items may not be safe to use. Immediate action required.
+      These items may not be safe to use. <strong style="color:#dc2626;">Immediate action required.</strong>
     </p>
     ${itemTable(entries, null)}
-    <p style="margin:0;font-size:13px;color:#fca5a5;">
+    <p style="margin:0;font-size:13px;color:#64748b;">
       Click <strong>View →</strong> on any item to open its record and log the inspection.
     </p>`;
 
-  return { subject, html: emailShell('#991b1b', header, body, 'rgba(255,255,255,.4)').replace(
-    'background:#fff;', 'background:#7f1d1d;'
-  )};
+  return { subject, html: emailShell('#991b1b', header, body, '#94a3b8') };
 }
 
 // ── Test email (single item) ───────────────────────────────────
